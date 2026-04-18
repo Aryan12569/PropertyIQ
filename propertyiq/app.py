@@ -176,24 +176,38 @@ def log_to_notion(name, phone, email, budget, prop_type, language, message, ai_r
         "parent": {"database_id": NOTION_DB_ID},
         "properties": {
             "Lead Name": {
-                "title": [{"text": {"content": name}}]
+                "title": [{"text": {"content": str(name)}}]
             },
-            "Email": {"email": email},
-            "Phone": {"phone_number": phone},
-            "Budget": {"select": {"name": budget}},
-            "Property Type": {"select": {"name": prop_type}},
-            "Language": {"select": {"name": language}},
+            "Email": {
+                "email": str(email)
+            },
+            "Phone": {
+                "phone_number": str(phone)
+            },
+            "Budget": {
+                "multi_select": [{"name": str(budget)}]
+            },
+            "Property Type": {
+                "multi_select": [{"name": str(prop_type)}]
+            },
+            "Language": {
+                "multi_select": [{"name": str(language).replace(" / عربي", "").replace("Arabic / عربي", "Arabic").strip()}]
+            },
             "Their Message": {
-                "rich_text": [{"text": {"content": message or ""}}]
+                "rich_text": [{"text": {"content": str(message or "")}}]
             },
             "AI Response": {
-                "rich_text": [{"text": {"content": ai_response}}]
+                "rich_text": [{"text": {"content": str(ai_response or "")}}]
             },
-            "Status": {"select": {"name": "New"}},
+            "Status": {
+                "select": {"name": "New"}
+            },
             "Submitted At": {
                 "date": {"start": datetime.now().isoformat()}
             },
-            "Hot Lead": {"checkbox": hot_lead == "YES"}
+            "Hot Lead": {
+                "checkbox": hot_lead == "YES"
+            }
         }
     }
     try:
@@ -202,6 +216,7 @@ def log_to_notion(name, phone, email, budget, prop_type, language, message, ai_r
         print("Lead logged to Notion.")
     except Exception as e:
         print(f"Notion error: {e}")
+        print(f"Notion response: {r.text}")
 
 
 def is_hot_lead(budget):
