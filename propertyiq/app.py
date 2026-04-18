@@ -166,7 +166,6 @@ def log_to_sheets(name, phone, email, budget, prop_type, language, message, ai_r
 
 
 def log_to_notion(name, phone, email, budget, prop_type, language, message, ai_response, hot_lead):
-    """Create a record in the Notion Lead Pipeline database."""
     url = "https://api.notion.com/v1/pages"
     headers = {
         "Authorization": f"Bearer {NOTION_TOKEN}",
