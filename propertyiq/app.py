@@ -172,6 +172,9 @@ def log_to_notion(name, phone, email, budget, prop_type, language, message, ai_r
         "Content-Type": "application/json",
         "Notion-Version": "2022-06-28"
     }
+    clean_budget = str(budget).replace(",", "")
+    clean_prop = str(prop_type).replace(",", "")
+    clean_lang = str(language).replace(" / عربي", "").replace("Arabic / عربي", "Arabic").strip()
     payload = {
         "parent": {"database_id": NOTION_DB_ID},
         "properties": {
@@ -184,15 +187,14 @@ def log_to_notion(name, phone, email, budget, prop_type, language, message, ai_r
             "Phone": {
                 "phone_number": str(phone)
             },
-           "Budget": {
-    "multi_select": [{"name": str(budget).replace(",", "")}]
-},
-"Property Type": {
-    "multi_select": [{"name": str(prop_type).replace(",", "")}]
-},
+            "Budget": {
+                "multi_select": [{"name": clean_budget}]
+            },
+            "Property Type": {
+                "multi_select": [{"name": clean_prop}]
             },
             "Language": {
-                "multi_select": [{"name": str(language).replace(" / عربي", "").replace("Arabic / عربي", "Arabic").strip()}]
+                "multi_select": [{"name": clean_lang}]
             },
             "Their Message": {
                 "rich_text": [{"text": {"content": str(message or "")}}]
@@ -218,7 +220,6 @@ def log_to_notion(name, phone, email, budget, prop_type, language, message, ai_r
     except Exception as e:
         print(f"Notion error: {e}")
         print(f"Notion response: {r.text}")
-
 
 def is_hot_lead(budget):
     hot_keywords = ["130,000", "200,000", "Above"]
