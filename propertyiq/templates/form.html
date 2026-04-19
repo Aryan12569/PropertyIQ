@@ -66,7 +66,9 @@ input,select,textarea{
   transition:border-color .2s;
   appearance:none;
 }
-input:focus,select:focus,textarea:focus{border-color:var(--gold)}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--gold);
+}
 select{
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A6E30' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
   background-repeat:no-repeat;
@@ -76,95 +78,26 @@ select{
 textarea{resize:none;height:100px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 button{
-  width:100%;padding:15px;
-  background:var(--gold);color:var(--ink);
+  width:100%;
+  padding:15px;
+  background:var(--gold);
+  color:var(--ink);
   border:none;border-radius:2px;
   font-family:'DM Sans',sans-serif;
   font-size:13px;font-weight:500;
   letter-spacing:2px;text-transform:uppercase;
-  cursor:pointer;transition:background .2s,transform .1s;
+  cursor:pointer;
+  transition:background .2s,transform .1s;
   margin-top:.5rem;
 }
 button:hover{background:#D4A842}
 button:active{transform:scale(0.99)}
 .privacy{
-  text-align:center;font-size:11px;
-  color:var(--muted);margin-top:1rem;line-height:1.6;
+  text-align:center;
+  font-size:11px;color:var(--muted);
+  margin-top:1rem;line-height:1.6;
 }
-.phone-row{display:flex;gap:8px;align-items:flex-start}
-.phone-input-wrap{flex:1}
-.phone-input-wrap input{width:100%}
-.cc-wrapper{
-  position:relative;
-  width:145px;
-  flex-shrink:0;
-}
-.cc-trigger{
-  display:flex;align-items:center;gap:8px;
-  padding:12px 14px;
-  border:1px solid var(--border);
-  border-radius:2px;
-  background:#fff;
-  cursor:pointer;
-  transition:border-color .2s;
-  height:47px;
-  user-select:none;
-}
-.cc-trigger:hover{border-color:var(--gold)}
-.cc-trigger.open{border-color:var(--gold)}
-.cc-flag{font-size:18px;line-height:1;flex-shrink:0}
-.cc-code{font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap}
-.cc-arrow{
-  margin-left:auto;font-size:10px;
-  color:var(--gold-dark);transition:transform .2s;flex-shrink:0;
-}
-.cc-trigger.open .cc-arrow{transform:rotate(180deg)}
-.cc-dropdown{
-  position:absolute;
-  top:calc(100% + 4px);
-  left:0;
-  width:290px;
-  background:#fff;
-  border:1px solid var(--border);
-  border-radius:4px;
-  box-shadow:0 12px 32px rgba(0,0,0,0.15);
-  z-index:999;
-  display:none;
-  flex-direction:column;
-  max-height:300px;
-}
-.cc-dropdown.open{display:flex}
-.cc-search-wrap{
-  padding:10px 12px;
-  border-bottom:1px solid var(--border);
-  flex-shrink:0;
-}
-.cc-search-wrap input{
-  width:100%;padding:8px 12px;
-  border:1px solid var(--border);
-  border-radius:2px;font-size:13px;
-  background:#fafaf8;
-}
-.cc-search-wrap input:focus{border-color:var(--gold)}
-.cc-list{overflow-y:auto;flex:1}
-.cc-item{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 14px;
-  cursor:pointer;font-size:13px;
-  color:var(--ink);transition:background .1s;
-  border-bottom:1px solid rgba(232,213,163,0.3);
-}
-.cc-item:hover{background:#fdf8ec}
-.cc-item.active{background:#fdf8ec;font-weight:500}
-.cc-item-flag{font-size:18px;flex-shrink:0}
-.cc-item-name{flex:1;color:var(--ink)}
-.cc-item-code{color:var(--muted);font-size:12px;flex-shrink:0}
-@media(max-width:480px){
-  .row{grid-template-columns:1fr}
-  .phone-row{flex-direction:column}
-  .cc-wrapper{width:100%}
-  .cc-dropdown{width:100%}
-}
+@media(max-width:480px){.row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -175,49 +108,22 @@ button:active{transform:scale(0.99)}
     <p>Complete this form and receive a personalised property recommendation on WhatsApp within minutes.</p>
   </div>
   <div class="card-body">
-    <form action="/submit" method="POST" id="mainForm">
+    <form action="/submit" method="POST">
 
       <div class="field">
         <label>Full Name</label>
         <input type="text" name="name" placeholder="Mohammed Al-Rashidi" required>
       </div>
 
-      <div class="field">
-        <label>WhatsApp Number</label>
-        <div class="phone-row">
-          <div class="cc-wrapper" id="ccWrapper">
-            <div class="cc-trigger" id="ccTrigger">
-              <span class="cc-flag" id="ccFlag">🇴🇲</span>
-              <span class="cc-code" id="ccCode">+968</span>
-              <span class="cc-arrow">▼</span>
-            </div>
-            <div class="cc-dropdown" id="ccDropdown">
-              <div class="cc-search-wrap">
-                <input
-                  type="text"
-                  id="ccSearch"
-                  placeholder="Search country or dial code..."
-                  autocomplete="off"
-                >
-              </div>
-              <div class="cc-list" id="ccList"></div>
-            </div>
-          </div>
-          <div class="phone-input-wrap">
-            <input
-              type="tel"
-              id="phoneNumber"
-              placeholder="XXXX XXXX"
-              required
-            >
-          </div>
+      <div class="row">
+        <div class="field">
+          <label>WhatsApp Number</label>
+          <input type="tel" name="phone" placeholder="+968 9X XXX XXXX" required>
         </div>
-        <input type="hidden" name="phone" id="phoneHidden">
-      </div>
-
-      <div class="field">
-        <label>Email Address</label>
-        <input type="email" name="email" placeholder="your@email.com" required>
+        <div class="field">
+          <label>Email Address</label>
+          <input type="email" name="email" placeholder="your@email.com" required>
+        </div>
       </div>
 
       <div class="field">
@@ -263,182 +169,5 @@ button:active{transform:scale(0.99)}
     </form>
   </div>
 </div>
-
-<script>
-const COUNTRIES = [
-  {flag:"🇴🇲",name:"Oman",             code:"+968", placeholder:"XXXX XXXX"},
-  {flag:"🇦🇪",name:"United Arab Emirates", code:"+971", placeholder:"XX XXX XXXX"},
-  {flag:"🇸🇦",name:"Saudi Arabia",      code:"+966", placeholder:"XX XXX XXXX"},
-  {flag:"🇶🇦",name:"Qatar",             code:"+974", placeholder:"XXXX XXXX"},
-  {flag:"🇰🇼",name:"Kuwait",            code:"+965", placeholder:"XXXX XXXX"},
-  {flag:"🇧🇭",name:"Bahrain",           code:"+973", placeholder:"XXXX XXXX"},
-  {flag:"🇾🇪",name:"Yemen",             code:"+967", placeholder:"XXX XXX XXX"},
-  {flag:"🇯🇴",name:"Jordan",            code:"+962", placeholder:"X XXXX XXXX"},
-  {flag:"🇱🇧",name:"Lebanon",           code:"+961", placeholder:"XX XXX XXX"},
-  {flag:"🇮🇶",name:"Iraq",              code:"+964", placeholder:"XXX XXX XXXX"},
-  {flag:"🇸🇾",name:"Syria",             code:"+963", placeholder:"XXX XXX XXX"},
-  {flag:"🇵🇸",name:"Palestine",         code:"+970", placeholder:"XXX XXX XXX"},
-  {flag:"🇪🇬",name:"Egypt",             code:"+20",  placeholder:"XXX XXX XXXX"},
-  {flag:"🇲🇦",name:"Morocco",           code:"+212", placeholder:"XXX XXX XXX"},
-  {flag:"🇩🇿",name:"Algeria",           code:"+213", placeholder:"XXX XXX XXX"},
-  {flag:"🇹🇳",name:"Tunisia",           code:"+216", placeholder:"XX XXX XXX"},
-  {flag:"🇱🇾",name:"Libya",             code:"+218", placeholder:"XX XXX XXXX"},
-  {flag:"🇸🇩",name:"Sudan",             code:"+249", placeholder:"XX XXX XXXX"},
-  {flag:"🇸🇴",name:"Somalia",           code:"+252", placeholder:"XX XXX XXX"},
-  {flag:"🇮🇳",name:"India",             code:"+91",  placeholder:"XXXXX XXXXX"},
-  {flag:"🇵🇰",name:"Pakistan",          code:"+92",  placeholder:"XXX XXX XXXX"},
-  {flag:"🇧🇩",name:"Bangladesh",        code:"+880", placeholder:"XXXX XXX XXX"},
-  {flag:"🇱🇰",name:"Sri Lanka",         code:"+94",  placeholder:"XX XXX XXXX"},
-  {flag:"🇳🇵",name:"Nepal",             code:"+977", placeholder:"XX XXX XXXX"},
-  {flag:"🇵🇭",name:"Philippines",       code:"+63",  placeholder:"XXX XXX XXXX"},
-  {flag:"🇮🇩",name:"Indonesia",         code:"+62",  placeholder:"XXX XXXX XXXX"},
-  {flag:"🇲🇾",name:"Malaysia",          code:"+60",  placeholder:"XX XXXX XXXX"},
-  {flag:"🇸🇬",name:"Singapore",         code:"+65",  placeholder:"XXXX XXXX"},
-  {flag:"🇹🇭",name:"Thailand",          code:"+66",  placeholder:"XX XXX XXXX"},
-  {flag:"🇻🇳",name:"Vietnam",           code:"+84",  placeholder:"XXX XXX XXX"},
-  {flag:"🇨🇳",name:"China",             code:"+86",  placeholder:"XXX XXXX XXXX"},
-  {flag:"🇯🇵",name:"Japan",             code:"+81",  placeholder:"XX XXXX XXXX"},
-  {flag:"🇰🇷",name:"South Korea",       code:"+82",  placeholder:"XX XXXX XXXX"},
-  {flag:"🇹🇷",name:"Turkey",            code:"+90",  placeholder:"XXX XXX XXXX"},
-  {flag:"🇮🇷",name:"Iran",              code:"+98",  placeholder:"XXX XXX XXXX"},
-  {flag:"🇦🇫",name:"Afghanistan",       code:"+93",  placeholder:"XX XXX XXXX"},
-  {flag:"🇬🇧",name:"United Kingdom",    code:"+44",  placeholder:"XXXX XXX XXX"},
-  {flag:"🇺🇸",name:"United States",     code:"+1",   placeholder:"XXX XXX XXXX"},
-  {flag:"🇨🇦",name:"Canada",            code:"+1",   placeholder:"XXX XXX XXXX"},
-  {flag:"🇦🇺",name:"Australia",         code:"+61",  placeholder:"XXX XXX XXX"},
-  {flag:"🇳🇿",name:"New Zealand",       code:"+64",  placeholder:"XX XXX XXXX"},
-  {flag:"🇩🇪",name:"Germany",           code:"+49",  placeholder:"XXX XXXXXXX"},
-  {flag:"🇫🇷",name:"France",            code:"+33",  placeholder:"X XX XX XX XX"},
-  {flag:"🇮🇹",name:"Italy",             code:"+39",  placeholder:"XXX XXX XXXX"},
-  {flag:"🇪🇸",name:"Spain",             code:"+34",  placeholder:"XXX XXX XXX"},
-  {flag:"🇵🇹",name:"Portugal",          code:"+351", placeholder:"XXX XXX XXX"},
-  {flag:"🇳🇱",name:"Netherlands",       code:"+31",  placeholder:"X XX XX XX XX"},
-  {flag:"🇧🇪",name:"Belgium",           code:"+32",  placeholder:"XXX XX XX XX"},
-  {flag:"🇨🇭",name:"Switzerland",       code:"+41",  placeholder:"XX XXX XX XX"},
-  {flag:"🇸🇪",name:"Sweden",            code:"+46",  placeholder:"XX XXX XXXX"},
-  {flag:"🇳🇴",name:"Norway",            code:"+47",  placeholder:"XXX XX XXX"},
-  {flag:"🇩🇰",name:"Denmark",           code:"+45",  placeholder:"XX XX XX XX"},
-  {flag:"🇫🇮",name:"Finland",           code:"+358", placeholder:"XX XXX XXXX"},
-  {flag:"🇵🇱",name:"Poland",            code:"+48",  placeholder:"XXX XXX XXX"},
-  {flag:"🇷🇺",name:"Russia",            code:"+7",   placeholder:"XXX XXX XXXX"},
-  {flag:"🇺🇦",name:"Ukraine",           code:"+380", placeholder:"XX XXX XXXX"},
-  {flag:"🇬🇷",name:"Greece",            code:"+30",  placeholder:"XXX XXX XXXX"},
-  {flag:"🇷🇴",name:"Romania",           code:"+40",  placeholder:"XXX XXX XXX"},
-  {flag:"🇨🇿",name:"Czech Republic",    code:"+420", placeholder:"XXX XXX XXX"},
-  {flag:"🇭🇺",name:"Hungary",           code:"+36",  placeholder:"XX XXX XXXX"},
-  {flag:"🇧🇷",name:"Brazil",            code:"+55",  placeholder:"XX XXXXX XXXX"},
-  {flag:"🇲🇽",name:"Mexico",            code:"+52",  placeholder:"XXX XXX XXXX"},
-  {flag:"🇦🇷",name:"Argentina",         code:"+54",  placeholder:"XX XXXX XXXX"},
-  {flag:"🇨🇴",name:"Colombia",          code:"+57",  placeholder:"XXX XXX XXXX"},
-  {flag:"🇨🇱",name:"Chile",             code:"+56",  placeholder:"X XXXX XXXX"},
-  {flag:"🇳🇬",name:"Nigeria",           code:"+234", placeholder:"XXX XXX XXXX"},
-  {flag:"🇰🇪",name:"Kenya",             code:"+254", placeholder:"XXX XXX XXX"},
-  {flag:"🇿🇦",name:"South Africa",      code:"+27",  placeholder:"XX XXX XXXX"},
-  {flag:"🇬🇭",name:"Ghana",             code:"+233", placeholder:"XX XXX XXXX"},
-  {flag:"🇪🇹",name:"Ethiopia",          code:"+251", placeholder:"XX XXX XXXX"},
-  {flag:"🇹🇿",name:"Tanzania",          code:"+255", placeholder:"XXX XXX XXX"},
-  {flag:"🇺🇬",name:"Uganda",            code:"+256", placeholder:"XXX XXX XXX"},
-  {flag:"🇷🇼",name:"Rwanda",            code:"+250", placeholder:"XXX XXX XXX"},
-  {flag:"🇸🇳",name:"Senegal",           code:"+221", placeholder:"XX XXX XXXX"},
-  {flag:"🇨🇮",name:"Ivory Coast",       code:"+225", placeholder:"XX XX XX XX XX"},
-  {flag:"🇿🇼",name:"Zimbabwe",          code:"+263", placeholder:"XX XXX XXXX"},
-  {flag:"🇿🇲",name:"Zambia",            code:"+260", placeholder:"XX XXX XXXX"},
-];
-
-let selectedCountry = COUNTRIES[0];
-let isOpen = false;
-
-const ccTrigger  = document.getElementById("ccTrigger");
-const ccDropdown = document.getElementById("ccDropdown");
-const ccSearch   = document.getElementById("ccSearch");
-const ccList     = document.getElementById("ccList");
-const ccFlag     = document.getElementById("ccFlag");
-const ccCode     = document.getElementById("ccCode");
-const ccWrapper  = document.getElementById("ccWrapper");
-const phoneInput = document.getElementById("phoneNumber");
-
-function updatePlaceholder(country){
-  phoneInput.placeholder = country.placeholder;
-}
-
-function buildList(filter){
-  ccList.innerHTML = "";
-  const q = (filter || "").toLowerCase().trim();
-  COUNTRIES.forEach(function(c){
-    const match = !q ||
-      c.name.toLowerCase().includes(q) ||
-      c.code.includes(q) ||
-      c.code.replace("+","").includes(q);
-    if(!match) return;
-    const div = document.createElement("div");
-    div.className = "cc-item" + (c === selectedCountry ? " active" : "");
-    div.innerHTML =
-      '<span class="cc-item-flag">' + c.flag + '</span>' +
-      '<span class="cc-item-name">' + c.name + '</span>' +
-      '<span class="cc-item-code">' + c.code + '</span>';
-    div.addEventListener("mousedown", function(e){
-      e.preventDefault();
-      selectCountry(c);
-    });
-    ccList.appendChild(div);
-  });
-}
-
-function selectCountry(c){
-  selectedCountry = c;
-  ccFlag.textContent = c.flag;
-  ccCode.textContent = c.code;
-  updatePlaceholder(c);
-  phoneInput.value = "";
-  closeDropdown();
-}
-
-function openDropdown(){
-  isOpen = true;
-  ccDropdown.classList.add("open");
-  ccTrigger.classList.add("open");
-  ccSearch.value = "";
-  buildList("");
-  setTimeout(function(){ ccSearch.focus(); }, 50);
-}
-
-function closeDropdown(){
-  isOpen = false;
-  ccDropdown.classList.remove("open");
-  ccTrigger.classList.remove("open");
-}
-
-ccTrigger.addEventListener("click", function(e){
-  e.stopPropagation();
-  if(isOpen) closeDropdown();
-  else openDropdown();
-});
-
-ccSearch.addEventListener("input", function(){
-  buildList(this.value);
-});
-
-ccSearch.addEventListener("click", function(e){
-  e.stopPropagation();
-});
-
-document.addEventListener("click", function(e){
-  if(!ccWrapper.contains(e.target)) closeDropdown();
-});
-
-document.getElementById("mainForm").addEventListener("submit", function(e){
-  var raw   = phoneInput.value.trim();
-  var clean = raw.replace(/\s/g,"").replace(/-/g,"").replace(/^0+/,"");
-  if(!clean){
-    e.preventDefault();
-    phoneInput.focus();
-    return;
-  }
-  document.getElementById("phoneHidden").value = selectedCountry.code + clean;
-});
-
-updatePlaceholder(selectedCountry);
-buildList("");
-</script>
 </body>
 </html>
