@@ -693,16 +693,94 @@ function sendMsg(){
     .finally(()=>{btn.disabled=false;btn.textContent='Send';});
 }
 
-// ── Countdown + last refresh ──────────────────────────────────────────────────
+// ── Live polling — no full-page reload, updates chat in real time ─────────────
 (function(){
-  const now = new Date();
-  const el = document.getElementById('last-refresh');
-  if (el) el.textContent = 'Updated '+now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  function setRefreshTime(){
+    const now = new Date();
+    const el = document.getElementById('last-refresh');
+    if (el) el.textContent = 'Updated '+now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+':'+now.getSeconds().toString().padStart(2,'0');
+  }
+  setRefreshTime();
 
-  let t = 30;
+  // Countdown display only — no reload triggered
+  let t = 15;
   const cd = document.getElementById('countdown');
-  const iv = setInterval(()=>{ t--; if(cd)cd.textContent=t; if(t<=0){clearInterval(iv);location.reload();} }, 1000);
+  setInterval(()=>{ t--; if(cd) cd.textContent=t; if(t<=0) t=15; }, 1000);
+
+  // ── Rebuild lead list sidebar without touching chat panel ────────────────
+  function rebuildLeadList(){
+    const llBody = document.getElementById('ll-body');
+    const allPhones = Object.keys(convData).reverse();
+    document.getElementById('conv-count').textContent = allPhones.length;
+    if (!allPhones.length) return;
+    llBody.innerHTML = allPhones.map(p => {
+      const c = convData[p];
+      const h = (c.history||[]);
+      const lastTime = h.length ? h[h.length-1].time : '';
+      const sub = c.booking_confirmed ? '✓ Booked'
+        : c.state==='ai_nurturing' ? 'Bot nurturing…'
+        : c.state==='handed_over'  ? 'Agent active'
+        : cap(c.state);
+      return `<div class="ll-item${p===activePhone?' active':''}" id="li-${p}" onclick="openChat('${p}')">
+        <div class="ll-av">${(c.name||p)[0].toUpperCase()}</div>
+        <div class="ll-info">
+          <div class="ll-name">${esc(c.name||('Lead +'+p))}${isHot(c)?' 🔥':''}</div>
+          <div class="ll-meta">${sub}</div>
+        </div>
+        <div class="ll-time">${lastTime}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Fetch fresh data and apply diffs ─────────────────────────────────────
+  async function pollData(){
+    try {
+      const res = await fetch('/api/conversations?key='+encodeURIComponent(DASHBOARD_KEY));
+      if (!res.ok) return;
+      const fresh = await res.json();
+      let hasNew = false;
+
+      Object.keys(fresh).forEach(phone => {
+        const newConv = fresh[phone];
+        if (!convData[phone]) {
+          convData[phone] = newConv;
+          hasNew = true;
+          return;
+        }
+        const oldLen = (convData[phone].history||[]).length;
+        const newLen = (newConv.history||[]).length;
+        if (newLen > oldLen) {
+          const newMsgs = newConv.history.slice(oldLen);
+          convData[phone].history     = newConv.history;
+          convData[phone].state       = newConv.state;
+          convData[phone].booking_confirmed = newConv.booking_confirmed;
+          hasNew = true;
+
+          // If this is the currently open conversation, append messages live
+          if (activePhone === phone) {
+            const msgBox = document.getElementById('c-msgs');
+            newMsgs.forEach(m => {
+              const roleLabel = m.role==='user' ? 'Lead' : m.role==='bot' ? 'PropertyIQ Bot' : 'Agent';
+              const div = document.createElement('div');
+              div.className = 'msg '+m.role;
+              div.innerHTML = `<div class="msg-role">${roleLabel}</div><div class="msg-bubble">${esc(m.text)}</div><div class="msg-time">${m.time}</div>`;
+              msgBox.appendChild(div);
+            });
+            msgBox.scrollTop = msgBox.scrollHeight;
+            // Update message count in header
+            const sub = document.getElementById('c-sub');
+            if (sub) sub.textContent = '+'+phone+' · '+(convData[phone].language||'').replace(/^\w/,c=>c.toUpperCase())+' · '+newLen+' messages';
+          }
+        }
+      });
+
+      if (hasNew) { rebuildLeadList(); setRefreshTime(); t = 15; }
+    } catch(e) { console.warn('Poll error:', e); }
+  }
+
+  setInterval(pollData, 15000);
 })();
+
 </script>
 </body>
 </html>

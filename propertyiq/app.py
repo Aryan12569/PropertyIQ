@@ -563,12 +563,28 @@ def webhook_receive():
     try:
         for entry in data.get("entry", []):
             for change in entry.get("changes", []):
-                for msg in change.get("value", {}).get("messages", []):
-                    if msg.get("type") != "text": continue
-                    raw_phone = msg.get("from","")
-                    text = msg.get("text",{}).get("body","").strip()
-                    if raw_phone and text:
-                        process_message(raw_phone, text)
+                value = change.get("value", {})
+
+                # ── Skip delivery/read status updates entirely ──────────────
+                if "statuses" in value and "messages" not in value:
+                    continue
+
+                for msg in value.get("messages", []):
+                    # Only handle text messages
+                    if msg.get("type") != "text":
+                        print(f"Skipping non-text message type: {msg.get('type')}")
+                        continue
+
+                    raw_phone = msg.get("from", "").strip()
+                    text = msg.get("text", {}).get("body", "").strip()
+
+                    if not raw_phone or not text:
+                        print(f"Skipping message with empty phone or text")
+                        continue
+
+                    print(f"Webhook received: from={raw_phone} text='{text[:60]}'")
+                    process_message(raw_phone, text)
+
     except Exception as e:
         print(f"Webhook ERROR: {e}")
         import traceback; traceback.print_exc()
@@ -606,6 +622,37 @@ def thank_you():
 @app.route("/health")
 def health():
     return jsonify({"status":"live","conversations":len(conversations),"booked":sum(1 for c in conversations.values() if c.get("booking_confirmed")),"nurturing":sum(1 for c in conversations.values() if c.get("state")=="ai_nurturing")}), 200
+
+@app.route("/api/conversations")
+def api_conversations():
+    if request.args.get("key", "") != AGENT_DASHBOARD_KEY:
+        return jsonify({"error": "forbidden"}), 403
+    phone = request.args.get("phone")
+    if phone:
+        key = normalize_phone(phone)
+        conv = conversations.get(key)
+        if not conv:
+            return jsonify({"error": "not found"}), 404
+        return jsonify({
+            "history": conv.get("history", []),
+            "state": conv.get("state"),
+            "booking_confirmed": conv.get("booking_confirmed", False)
+        })
+    return jsonify(conversations)
+
+@app.route("/api/test-webhook", methods=["POST"])
+def test_webhook():
+    """Dev helper: simulate an incoming WhatsApp message."""
+    if request.args.get("key", "") != AGENT_DASHBOARD_KEY:
+        return jsonify({"error": "forbidden"}), 403
+    data = request.get_json(silent=True) or {}
+    phone = data.get("phone", "").strip()
+    text  = data.get("text", "").strip()
+    if not phone or not text:
+        return jsonify({"error": "phone and text required"}), 400
+    print(f"[TEST WEBHOOK] from={phone} text='{text}'")
+    process_message(phone, text)
+    return jsonify({"ok": True, "state": get_conversation(normalize_phone(phone)).get("state")})
 
 generate_brochures()
 if __name__ == "__main__":
