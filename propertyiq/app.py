@@ -184,11 +184,12 @@ def log_to_notion(name, phone, email, budget, prop_type, language, message, ai_r
             "Phone": {
                 "phone_number": str(phone)
             },
-            "Budget": {
-                "multi_select": [{"name": str(budget)}]
-            },
-            "Property Type": {
-                "multi_select": [{"name": str(prop_type)}]
+           "Budget": {
+    "multi_select": [{"name": str(budget).replace(",", "")}]
+},
+"Property Type": {
+    "multi_select": [{"name": str(prop_type).replace(",", "")}]
+},
             },
             "Language": {
                 "multi_select": [{"name": str(language).replace(" / عربي", "").replace("Arabic / عربي", "Arabic").strip()}]
