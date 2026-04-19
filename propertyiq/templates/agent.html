@@ -5,295 +5,147 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PropertyIQ — Agent Dashboard</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Sora:wght@300;400;500;600;700&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Sora:wght@300;400;500;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0A0C12;
-  --surface:#10131C;
-  --surface2:#161A26;
-  --border:#1E2435;
-  --border2:#252D42;
-  --gold:#C9A84C;
-  --gold-dim:#8A6E30;
-  --gold-glow:rgba(201,168,76,0.12);
-  --text:#E4DFCE;
-  --text-dim:#8A8F9E;
-  --text-muted:#4A5068;
-  --green:#34D399;
-  --green-bg:rgba(52,211,153,0.08);
-  --red:#F87171;
-  --red-bg:rgba(248,113,113,0.08);
-  --blue:#60A5FA;
-  --blue-bg:rgba(96,165,250,0.08);
-  --amber:#FBBF24;
-  --amber-bg:rgba(251,191,36,0.08);
-  --purple:#A78BFA;
-  --purple-bg:rgba(167,139,250,0.08);
-  --font:'Sora',sans-serif;
-  --mono:'DM Mono',monospace;
+  --bg:#0A0C12;--surface:#10131C;--surface2:#161A26;
+  --border:#1E2435;--border2:#252D42;
+  --gold:#C9A84C;--gold-dim:#8A6E30;--gold-glow:rgba(201,168,76,0.1);
+  --text:#E4DFCE;--text-dim:#8A8F9E;--text-muted:#4A5068;
+  --green:#34D399;--red:#F87171;--blue:#60A5FA;
+  --amber:#FBBF24;--purple:#A78BFA;
+  --font:'Sora',sans-serif;--mono:'DM Mono',monospace;
 }
-
 html,body{height:100%;overflow:hidden}
 body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;flex-direction:column}
 
-/* ── TOPBAR ── */
-.topbar{
-  height:52px;background:var(--surface);
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 1.5rem;flex-shrink:0;z-index:200;
-  position:relative;
-}
-.topbar::after{
-  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--gold),transparent);
-  opacity:.3;
-}
-.topbar-left{display:flex;align-items:center;gap:14px}
-.logo{
-  font-family:var(--mono);font-size:13px;font-weight:500;
-  color:var(--gold);letter-spacing:2.5px;
-}
-.topbar-divider{width:1px;height:20px;background:var(--border2)}
-.topbar-title{font-size:12px;color:var(--text-dim);font-weight:400}
+/* TOPBAR */
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;flex-shrink:0;z-index:200}
+.logo{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--gold);letter-spacing:2.5px}
+.topbar-divider{width:1px;height:20px;background:var(--border2);margin:0 14px}
+.topbar-title{font-size:12px;color:var(--text-dim)}
+.topbar-left{display:flex;align-items:center}
 .topbar-right{display:flex;align-items:center;gap:12px}
-.status-dot{
-  display:flex;align-items:center;gap:6px;
-  font-size:11px;font-family:var(--mono);color:var(--green);
-}
-.status-dot::before{
-  content:'';width:6px;height:6px;border-radius:50%;
-  background:var(--green);box-shadow:0 0 8px var(--green);
-  animation:pulse 2s ease-in-out infinite;
-}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.btn-refresh{
-  background:transparent;border:1px solid var(--border2);
-  color:var(--text-dim);padding:5px 12px;border-radius:5px;
-  font-size:11px;font-family:var(--mono);cursor:pointer;
-  transition:all .2s;letter-spacing:.5px;
-}
-.btn-refresh:hover{border-color:var(--gold);color:var(--gold)}
-.last-refresh{font-size:10px;color:var(--text-muted);font-family:var(--mono)}
+.live-dot{display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);color:var(--green)}
+.live-dot::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.btn-sm{background:transparent;border:1px solid var(--border2);color:var(--text-dim);padding:5px 12px;border-radius:5px;font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .2s;letter-spacing:.5px}
+.btn-sm:hover{border-color:var(--gold);color:var(--gold)}
 
-/* ── LAYOUT ── */
+/* SHELL */
 .shell{display:flex;flex:1;overflow:hidden}
 
-/* ── SIDEBAR ── */
-.sidebar{
-  width:220px;background:var(--surface);border-right:1px solid var(--border);
-  display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;
-}
-.sidebar-section{padding:1rem 1rem .5rem;font-size:9px;font-family:var(--mono);
-  color:var(--text-muted);letter-spacing:2px;text-transform:uppercase}
-.nav-item{
-  display:flex;align-items:center;gap:10px;
-  padding:9px 1rem;font-size:12px;color:var(--text-dim);
-  cursor:pointer;transition:all .15s;position:relative;
-  border-left:2px solid transparent;
-}
+/* SIDEBAR */
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-section{padding:1rem 1rem .4rem;font-size:9px;font-family:var(--mono);color:var(--text-muted);letter-spacing:2px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 1rem;font-size:12px;color:var(--text-dim);cursor:pointer;transition:all .15s;border-left:2px solid transparent}
 .nav-item:hover{color:var(--text);background:rgba(255,255,255,.02)}
 .nav-item.active{color:var(--gold);border-left-color:var(--gold);background:var(--gold-glow)}
 .nav-icon{font-size:14px;width:18px;text-align:center}
-.nav-badge{
-  margin-left:auto;font-size:9px;font-family:var(--mono);
-  background:var(--gold-glow);color:var(--gold);
-  padding:2px 6px;border-radius:10px;border:1px solid rgba(201,168,76,.2);
-}
-.nav-badge.red{background:var(--red-bg);color:var(--red);border-color:rgba(248,113,113,.2)}
+.nav-badge{margin-left:auto;font-size:9px;font-family:var(--mono);background:var(--gold-glow);color:var(--gold);padding:2px 6px;border-radius:10px;border:1px solid rgba(201,168,76,.2)}
+.nav-badge.red{background:rgba(248,113,113,.08);color:var(--red);border-color:rgba(248,113,113,.2)}
 .sidebar-spacer{flex:1}
-.sidebar-footer{
-  padding:1rem;border-top:1px solid var(--border);
-  font-size:11px;color:var(--text-muted);line-height:1.6;
-}
-.sidebar-footer strong{color:var(--text-dim);display:block;margin-bottom:2px}
+.sidebar-footer{padding:1rem;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);line-height:1.7}
+.sidebar-footer strong{color:var(--text-dim);display:block}
 
-/* ── MAIN CONTENT AREA ── */
+/* CONTENT */
 .content{flex:1;overflow-y:auto;display:flex;flex-direction:column}
-
-/* ── PAGE VIEWS ── */
 .page{display:none;padding:1.5rem;flex:1}
 .page.active{display:block}
 
-/* ── KPI ROW ── */
+/* KPI ROW */
 .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:1.25rem}
-.kpi{
-  background:var(--surface);border:1px solid var(--border);border-radius:8px;
-  padding:14px 16px;position:relative;overflow:hidden;
-  transition:border-color .2s;
-}
-.kpi:hover{border-color:var(--border2)}
-.kpi::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:var(--kpi-color,var(--gold));opacity:.5;
-}
-.kpi-label{font-size:9px;font-family:var(--mono);color:var(--text-muted);
-  letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
-.kpi-val{font-size:26px;font-weight:700;font-family:var(--mono);
-  color:var(--kpi-color,var(--gold));line-height:1}
+@media(max-width:1300px){.kpi-row{grid-template-columns:repeat(3,1fr)}}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kpi-c,var(--gold));opacity:.6}
+.kpi-label{font-size:9px;font-family:var(--mono);color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+.kpi-val{font-size:26px;font-weight:700;font-family:var(--mono);color:var(--kpi-c,var(--gold));line-height:1}
 .kpi-sub{font-size:10px;color:var(--text-muted);margin-top:5px}
-.kpi-icon{
-  position:absolute;right:14px;top:50%;transform:translateY(-50%);
-  font-size:22px;opacity:.12;
-}
+.kpi-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:22px;opacity:.1}
 
-/* ── CHART ROW ── */
+/* CHART ROW */
 .chart-row{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:1.25rem}
-.chart-card{
-  background:var(--surface);border:1px solid var(--border);border-radius:8px;
-  padding:1rem 1.25rem;
-}
-.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
-.chart-title{font-size:11px;font-family:var(--mono);color:var(--text-dim);
-  letter-spacing:1px;text-transform:uppercase}
-.chart-sub{font-size:10px;color:var(--text-muted);margin-top:2px}
+@media(max-width:1200px){.chart-row{grid-template-columns:1fr 1fr}}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem}
+.chart-title{font-size:11px;font-family:var(--mono);color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.chart-sub{font-size:10px;color:var(--text-muted);margin-bottom:1rem}
 
-/* Funnel chart */
-.funnel{display:flex;flex-direction:column;gap:6px}
-.funnel-bar-wrap{display:flex;align-items:center;gap:10px}
-.funnel-label{font-size:10px;color:var(--text-dim);width:80px;flex-shrink:0;font-family:var(--mono)}
-.funnel-track{flex:1;background:var(--border);border-radius:2px;height:20px;overflow:hidden;position:relative}
-.funnel-fill{height:100%;border-radius:2px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;
-  font-size:9px;font-family:var(--mono);color:rgba(255,255,255,.7);font-weight:500;
-  transition:width 1s cubic-bezier(.4,0,.2,1);}
-.funnel-count{font-size:10px;color:var(--text-muted);font-family:var(--mono);width:24px;text-align:right;flex-shrink:0}
+/* Funnel */
+.funnel{display:flex;flex-direction:column;gap:8px}
+.funnel-row{display:flex;align-items:center;gap:10px}
+.funnel-label{font-size:10px;font-family:var(--mono);color:var(--text-dim);width:82px;flex-shrink:0}
+.funnel-track{flex:1;background:var(--border);border-radius:3px;height:20px;overflow:hidden}
+.funnel-fill{height:100%;border-radius:3px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:9px;font-family:var(--mono);color:rgba(255,255,255,.8);font-weight:500;min-width:28px;transition:width 1s ease}
+.funnel-n{font-size:10px;color:var(--text-muted);font-family:var(--mono);width:22px;text-align:right;flex-shrink:0}
 
-/* Donut chart */
-.donut-wrap{display:flex;flex-direction:column;align-items:center;gap:12px}
+/* Donut */
+.donut-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
 .donut-svg{width:110px;height:110px}
-.donut-legend{display:flex;flex-direction:column;gap:6px;width:100%}
-.legend-item{display:flex;align-items:center;gap:7px;font-size:10px}
+.donut-legend{width:100%;display:flex;flex-direction:column;gap:5px}
+.legend-row{display:flex;align-items:center;gap:7px;font-size:10px}
 .legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.legend-label{color:var(--text-dim);flex:1}
+.legend-lbl{color:var(--text-dim);flex:1}
 .legend-val{color:var(--text-muted);font-family:var(--mono)}
 
-/* Bar chart */
-.bars{display:flex;align-items:flex-end;gap:6px;height:90px}
-.bar-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
-.bar{width:100%;background:var(--border);border-radius:3px 3px 0 0;position:relative;
-  transition:height .8s cubic-bezier(.4,0,.2,1);}
-.bar-fill{
-  position:absolute;bottom:0;left:0;right:0;border-radius:3px 3px 0 0;
-  transition:height .8s .1s cubic-bezier(.4,0,.2,1);
-}
-.bar-label{font-size:8px;color:var(--text-muted);font-family:var(--mono);text-align:center;white-space:nowrap}
-.bar-val{font-size:9px;color:var(--text-dim);font-family:var(--mono)}
-
-/* ── PIPELINE TABLE ── */
-.table-card{
-  background:var(--surface);border:1px solid var(--border);border-radius:8px;
-  overflow:hidden;margin-bottom:1.25rem;
-}
-.table-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:.875rem 1.25rem;border-bottom:1px solid var(--border);
-}
-.table-title{font-size:11px;font-family:var(--mono);color:var(--text-dim);
-  letter-spacing:1px;text-transform:uppercase}
-.table-filters{display:flex;gap:6px}
-.filter-btn{
-  background:transparent;border:1px solid var(--border2);
-  color:var(--text-muted);padding:4px 10px;border-radius:4px;
-  font-size:10px;font-family:var(--mono);cursor:pointer;
-  transition:all .15s;
-}
-.filter-btn:hover,.filter-btn.active{border-color:var(--gold);color:var(--gold);background:var(--gold-glow)}
-
+/* TABLE */
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:1.25rem}
+.table-head{display:flex;align-items:center;justify-content:space-between;padding:.875rem 1.25rem;border-bottom:1px solid var(--border)}
+.table-title{font-size:11px;font-family:var(--mono);color:var(--text-dim);letter-spacing:1px;text-transform:uppercase}
+.table-meta{font-size:10px;color:var(--text-muted);font-family:var(--mono)}
+.filter-row{display:flex;gap:6px}
+.fbtn{background:transparent;border:1px solid var(--border2);color:var(--text-muted);padding:4px 10px;border-radius:4px;font-size:10px;font-family:var(--mono);cursor:pointer;transition:all .15s}
+.fbtn:hover,.fbtn.active{border-color:var(--gold);color:var(--gold);background:var(--gold-glow)}
 table{width:100%;border-collapse:collapse}
 thead tr{background:var(--surface2)}
-th{
-  text-align:left;padding:8px 14px;
-  font-size:9px;font-family:var(--mono);color:var(--text-muted);
-  letter-spacing:1.5px;text-transform:uppercase;
-  border-bottom:1px solid var(--border);font-weight:400;
-}
-tbody tr{transition:background .1s;cursor:pointer}
-tbody tr:hover{background:rgba(255,255,255,.02)}
-tbody tr.selected{background:var(--gold-glow)}
+th{text-align:left;padding:8px 14px;font-size:9px;font-family:var(--mono);color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:400}
+tbody tr{cursor:pointer;transition:background .1s}
+tbody tr:hover{background:rgba(255,255,255,.018)}
 td{padding:10px 14px;font-size:12px;color:var(--text-dim);border-bottom:1px solid var(--border)}
 tbody tr:last-child td{border-bottom:none}
 .td-name{color:var(--text);font-weight:500}
-.td-phone{font-family:var(--mono);font-size:11px}
-.td-time{font-family:var(--mono);font-size:10px;color:var(--text-muted)}
+.td-mono{font-family:var(--mono);font-size:11px}
 
-/* ── BADGES ── */
-.badge{
-  display:inline-flex;align-items:center;gap:4px;
-  font-size:9px;font-family:var(--mono);letter-spacing:.8px;
-  text-transform:uppercase;padding:3px 7px;border-radius:4px;font-weight:500;
-}
-.badge-green{background:var(--green-bg);color:var(--green);border:1px solid rgba(52,211,153,.2)}
-.badge-gold{background:var(--gold-glow);color:var(--gold);border:1px solid rgba(201,168,76,.2)}
-.badge-red{background:var(--red-bg);color:var(--red);border:1px solid rgba(248,113,113,.2)}
-.badge-blue{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(96,165,250,.2)}
-.badge-amber{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(251,191,36,.2)}
-.badge-muted{background:rgba(255,255,255,.04);color:var(--text-muted);border:1px solid var(--border2)}
-.badge-purple{background:var(--purple-bg);color:var(--purple);border:1px solid rgba(167,139,250,.2)}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-family:var(--mono);letter-spacing:.8px;text-transform:uppercase;padding:3px 7px;border-radius:4px;font-weight:500}
 .badge::before{content:'●';font-size:7px}
+.b-green{background:rgba(52,211,153,.08);color:var(--green);border:1px solid rgba(52,211,153,.2)}
+.b-gold{background:var(--gold-glow);color:var(--gold);border:1px solid rgba(201,168,76,.2)}
+.b-red{background:rgba(248,113,113,.08);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+.b-blue{background:rgba(96,165,250,.08);color:var(--blue);border:1px solid rgba(96,165,250,.2)}
+.b-amber{background:rgba(251,191,36,.08);color:var(--amber);border:1px solid rgba(251,191,36,.2)}
+.b-purple{background:rgba(167,139,250,.08);color:var(--purple);border:1px solid rgba(167,139,250,.2)}
+.b-muted{background:rgba(255,255,255,.04);color:var(--text-muted);border:1px solid var(--border2)}
+.b-wa{background:rgba(37,211,102,.06);color:#25D366;border:1px solid rgba(37,211,102,.15)}
 
-/* ── CHAT PAGE ── */
-.chat-layout{display:grid;grid-template-columns:320px 1fr;gap:12px;height:calc(100vh - 52px - 3rem);min-height:0}
-.lead-list{
-  background:var(--surface);border:1px solid var(--border);border-radius:8px;
-  display:flex;flex-direction:column;overflow:hidden;
-}
-.lead-list-head{
-  padding:.875rem 1rem;border-bottom:1px solid var(--border);
-  font-size:11px;font-family:var(--mono);color:var(--text-dim);
-  letter-spacing:1px;text-transform:uppercase;flex-shrink:0;
-}
-.lead-list-body{overflow-y:auto;flex:1}
-.lead-item{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 1rem;border-bottom:1px solid var(--border);
-  cursor:pointer;transition:background .1s;
-}
-.lead-item:hover{background:rgba(255,255,255,.02)}
-.lead-item.active{background:var(--gold-glow);border-left:2px solid var(--gold)}
-.lead-item:last-child{border-bottom:none}
-.li-avatar{
-  width:36px;height:36px;border-radius:50%;
-  background:var(--surface2);display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:600;color:var(--gold);flex-shrink:0;
-  border:1px solid var(--border2);
-}
-.li-info{flex:1;min-width:0}
-.li-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.li-meta{font-size:10px;color:var(--text-muted);font-family:var(--mono);margin-top:1px}
-.li-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
-.li-time{font-size:9px;color:var(--text-muted);font-family:var(--mono)}
-.li-unread{width:16px;height:16px;border-radius:50%;background:var(--gold);
-  color:var(--bg);font-size:8px;font-family:var(--mono);display:flex;align-items:center;justify-content:center}
+/* CHAT PAGE */
+.chat-layout{display:grid;grid-template-columns:300px 1fr;gap:12px;height:calc(100vh - 52px - 2rem);min-height:0}
+.lead-list{background:var(--surface);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;overflow:hidden}
+.ll-head{padding:.875rem 1rem;border-bottom:1px solid var(--border);font-size:11px;font-family:var(--mono);color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;flex-shrink:0}
+.ll-body{overflow-y:auto;flex:1}
+.ll-item{display:flex;align-items:center;gap:10px;padding:10px 1rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.ll-item:hover{background:rgba(255,255,255,.02)}
+.ll-item.active{background:var(--gold-glow);border-left:2px solid var(--gold)}
+.ll-item:last-child{border-bottom:none}
+.ll-av{width:36px;height:36px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--gold);flex-shrink:0}
+.ll-info{flex:1;min-width:0}
+.ll-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ll-meta{font-size:10px;color:var(--text-muted);font-family:var(--mono);margin-top:1px}
+.ll-time{font-size:9px;color:var(--text-muted);font-family:var(--mono)}
 
-/* ── CHAT PANEL ── */
-.chat-panel{
-  background:var(--surface);border:1px solid var(--border);border-radius:8px;
-  display:flex;flex-direction:column;overflow:hidden;
-}
-.chat-header{
-  padding:.875rem 1.25rem;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:12px;flex-shrink:0;
-}
-.chat-header-avatar{
-  width:38px;height:38px;border-radius:50%;
-  background:var(--surface2);border:1px solid var(--border2);
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px;font-weight:600;color:var(--gold);
-}
-.chat-header-info{flex:1}
-.chat-header-name{font-size:14px;font-weight:600;color:var(--text)}
-.chat-header-sub{font-size:10px;color:var(--text-muted);font-family:var(--mono);margin-top:2px}
-.chat-header-badges{display:flex;gap:6px;margin-left:auto}
-.chat-messages{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:8px}
-.no-chat{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  flex:1;color:var(--text-muted);font-size:13px;gap:8px;
-}
-.no-chat-icon{font-size:36px;opacity:.3}
-
-/* Messages */
-.msg{display:flex;flex-direction:column;max-width:75%}
+/* CHAT PANEL */
+.chat-panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;overflow:hidden}
+.no-chat-msg{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--text-muted);font-size:13px;gap:8px}
+.chat-hdr{padding:.875rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.chat-av{width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--gold)}
+.chat-hdr-name{font-size:14px;font-weight:600;color:var(--text)}
+.chat-hdr-sub{font-size:10px;color:var(--text-muted);font-family:var(--mono);margin-top:2px}
+.chat-hdr-badges{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+.detail-strip{background:var(--surface2);border-bottom:1px solid var(--border);padding:.75rem 1.25rem;display:flex;gap:16px;flex-wrap:wrap;flex-shrink:0}
+.ds-item{display:flex;flex-direction:column;gap:2px}
+.ds-label{font-size:8px;font-family:var(--mono);color:var(--gold);letter-spacing:1.5px;text-transform:uppercase}
+.ds-val{font-size:11px;color:var(--text)}
+.chat-msgs{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:8px}
+.msg{display:flex;flex-direction:column;max-width:76%}
 .msg.user{align-self:flex-start}
 .msg.bot,.msg.agent{align-self:flex-end}
 .msg-role{font-size:9px;font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;opacity:.6}
@@ -301,84 +153,28 @@ tbody tr:last-child td{border-bottom:none}
 .msg.bot .msg-role{color:var(--gold);text-align:right}
 .msg.agent .msg-role{color:var(--green);text-align:right}
 .msg-bubble{padding:9px 13px;border-radius:10px;font-size:12.5px;line-height:1.65;white-space:pre-wrap}
-.msg.user .msg-bubble{
-  background:var(--surface2);color:var(--text);
-  border-radius:3px 10px 10px 10px;border:1px solid var(--border2);
-}
-.msg.bot .msg-bubble{
-  background:#1E1C12;color:var(--gold);
-  border-radius:10px 3px 10px 10px;border:1px solid rgba(201,168,76,.15);
-}
-.msg.agent .msg-bubble{
-  background:#0F1E18;color:var(--green);
-  border-radius:10px 3px 10px 10px;border:1px solid rgba(52,211,153,.15);
-}
+.msg.user .msg-bubble{background:var(--surface2);color:var(--text);border-radius:3px 10px 10px 10px;border:1px solid var(--border2)}
+.msg.bot .msg-bubble{background:#1E1C12;color:var(--gold);border-radius:10px 3px 10px 10px;border:1px solid rgba(201,168,76,.15)}
+.msg.agent .msg-bubble{background:#0F1E18;color:var(--green);border-radius:10px 3px 10px 10px;border:1px solid rgba(52,211,153,.15)}
 .msg-time{font-size:9px;color:var(--text-muted);font-family:var(--mono);margin-top:3px}
 .msg.user .msg-time{text-align:left}
 .msg.bot .msg-time,.msg.agent .msg-time{text-align:right}
-
-/* Reply bar */
-.reply-bar{
-  padding:.875rem 1rem;border-top:1px solid var(--border);
-  display:flex;gap:8px;align-items:flex-end;flex-shrink:0;
-}
-.reply-bar.disabled{opacity:.5;pointer-events:none}
-.reply-input{
-  flex:1;background:var(--surface2);border:1px solid var(--border2);
-  border-radius:8px;padding:9px 12px;
-  color:var(--text);font-family:var(--font);font-size:12.5px;
-  resize:none;height:64px;outline:none;
-  transition:border-color .2s;
-}
+.reply-bar{padding:.875rem 1rem;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
+.reply-input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--font);font-size:12.5px;resize:none;height:64px;outline:none;transition:border-color .2s}
 .reply-input:focus{border-color:var(--gold)}
 .reply-input::placeholder{color:var(--text-muted)}
-.btn-send{
-  background:var(--gold);color:#1A1612;
-  border:none;border-radius:8px;padding:9px 18px;
-  font-family:var(--font);font-size:12px;font-weight:600;
-  cursor:pointer;white-space:nowrap;height:64px;
-  transition:background .15s;
-}
+.btn-send{background:var(--gold);color:#1A1612;border:none;border-radius:8px;padding:9px 18px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;height:64px;transition:background .15s}
 .btn-send:hover{background:#D4B050}
 .btn-send:disabled{background:var(--border);color:var(--text-muted);cursor:not-allowed}
-.send-feedback{
-  font-size:10px;color:var(--green);padding:4px 1rem;
-  font-family:var(--mono);display:none;
-}
+.send-ok{font-size:10px;color:var(--green);padding:4px 1rem;font-family:var(--mono);display:none}
 
-/* Lead detail panel inside chat */
-.lead-detail-strip{
-  background:var(--surface2);border-bottom:1px solid var(--border);
-  padding:.75rem 1.25rem;
-  display:flex;gap:16px;flex-wrap:wrap;flex-shrink:0;
-}
-.ld-item{display:flex;flex-direction:column;gap:2px}
-.ld-label{font-size:8px;font-family:var(--mono);color:var(--gold);letter-spacing:1.5px;text-transform:uppercase}
-.ld-val{font-size:11px;color:var(--text)}
-
-/* ── EMPTY STATE ── */
-.empty-state{
-  text-align:center;padding:4rem 2rem;
-  color:var(--text-muted);font-size:13px;
-}
-.empty-icon{font-size:40px;margin-bottom:.75rem;opacity:.25}
-
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
-::-webkit-scrollbar-thumb:hover{background:#2E3650}
-
-/* ── RESPONSIVE TWEAKS ── */
-@media(max-width:1200px){
-  .kpi-row{grid-template-columns:repeat(3,1fr)}
-  .chart-row{grid-template-columns:1fr 1fr}
-}
 </style>
 </head>
 <body>
 
-<!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-left">
     <div class="logo">PROPERTYIQ</div>
@@ -386,41 +182,32 @@ tbody tr:last-child td{border-bottom:none}
     <div class="topbar-title">Agent Intelligence Dashboard · Al Noor Properties, Muscat</div>
   </div>
   <div class="topbar-right">
-    <div class="status-dot">LIVE</div>
-    <div class="last-refresh" id="lastRefresh"></div>
-    <button class="btn-refresh" onclick="location.reload()">↻ Refresh</button>
+    <div class="live-dot">LIVE</div>
+    <span id="last-refresh" style="font-size:10px;color:var(--text-muted);font-family:var(--mono)"></span>
+    <button class="btn-sm" onclick="location.reload()">↻ Refresh</button>
   </div>
 </div>
 
-<!-- SHELL -->
 <div class="shell">
 
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-section">Navigation</div>
-    <div class="nav-item active" onclick="showPage('overview',this)">
+    <div class="nav-item active" id="nav-overview" onclick="showPage('overview',this)">
       <span class="nav-icon">◈</span> Overview
     </div>
-    <div class="nav-item" onclick="showPage('pipeline',this)">
+    <div class="nav-item" id="nav-pipeline" onclick="showPage('pipeline',this)">
       <span class="nav-icon">⊞</span> Pipeline
-      <span class="nav-badge" id="nav-pipeline-count">{{ conversations|length }}</span>
+      <span class="nav-badge" id="nav-count">0</span>
     </div>
-    <div class="nav-item" onclick="showPage('chat',this)">
+    <div class="nav-item" id="nav-chat" onclick="showPage('chat',this)">
       <span class="nav-icon">◎</span> Conversations
-      {% set hot_count = conversations.values()|selectattr('booking_confirmed','equalto',True)|list|length %}
-      {% if hot_count > 0 %}<span class="nav-badge red">{{ hot_count }}</span>{% endif %}
     </div>
 
-    <div class="sidebar-section" style="margin-top:.5rem">Filters</div>
-    <div class="nav-item" onclick="filterLeads('all',this)" style="font-size:11px">
-      <span class="nav-icon" style="font-size:10px">●</span> All Leads
-    </div>
-    <div class="nav-item" onclick="filterLeads('ai_nurturing',this)" style="font-size:11px">
-      <span class="nav-icon" style="font-size:10px;color:var(--blue)">●</span> AI Nurturing
-    </div>
-    <div class="nav-item" onclick="filterLeads('handed_over',this)" style="font-size:11px">
-      <span class="nav-icon" style="font-size:10px;color:var(--green)">●</span> Booked
-    </div>
+    <div class="sidebar-section" style="margin-top:.5rem">Quick Filter</div>
+    <div class="nav-item" style="font-size:11px" onclick="goFilter('all',this)"><span class="nav-icon" style="font-size:10px;color:var(--text-muted)">●</span> All Leads</div>
+    <div class="nav-item" style="font-size:11px" onclick="goFilter('ai_nurturing',this)"><span class="nav-icon" style="font-size:10px;color:var(--blue)">●</span> AI Nurturing</div>
+    <div class="nav-item" style="font-size:11px" onclick="goFilter('handed_over',this)"><span class="nav-icon" style="font-size:10px;color:var(--green)">●</span> Booked</div>
 
     <div class="sidebar-spacer"></div>
     <div class="sidebar-footer">
@@ -431,631 +218,490 @@ tbody tr:last-child td{border-bottom:none}
     </div>
   </div>
 
-  <!-- CONTENT -->
   <div class="content">
 
-    <!-- ── OVERVIEW PAGE ── -->
+    <!-- ══ OVERVIEW PAGE ══ -->
     <div class="page active" id="page-overview">
 
-      <!-- KPI ROW -->
-      {% set total = conversations|length %}
-      {% set booked = conversations.values()|selectattr('booking_confirmed','equalto',True)|list|length %}
-      {% set nurturing = conversations.values()|selectattr('state','equalto','ai_nurturing')|list|length %}
-      {% set hot_leads = [] %}
-      {% for c in conversations.values() %}
-        {% if c.budget and ('130000' in c.budget or '200000' in c.budget or 'Above' in c.budget) %}
-          {% set _ = hot_leads.append(c) %}
-        {% endif %}
-      {% endfor %}
-      {% set web_leads = conversations.values()|selectattr('source','equalto','web_form')|list|length %}
-      {% set conv_rate = ((booked / total * 100)|round(1)) if total > 0 else 0 %}
-
-      <div class="kpi-row">
-        <div class="kpi" style="--kpi-color:var(--gold)">
-          <div class="kpi-label">Total Leads</div>
-          <div class="kpi-val">{{ total }}</div>
-          <div class="kpi-sub">All time</div>
-          <div class="kpi-icon">◈</div>
-        </div>
-        <div class="kpi" style="--kpi-color:var(--blue)">
-          <div class="kpi-label">AI Nurturing</div>
-          <div class="kpi-val">{{ nurturing }}</div>
-          <div class="kpi-sub">Bot active now</div>
-          <div class="kpi-icon">◎</div>
-        </div>
-        <div class="kpi" style="--kpi-color:var(--green)">
-          <div class="kpi-label">Bookings</div>
-          <div class="kpi-val">{{ booked }}</div>
-          <div class="kpi-sub">Viewing confirmed</div>
-          <div class="kpi-icon">✓</div>
-        </div>
-        <div class="kpi" style="--kpi-color:var(--red)">
-          <div class="kpi-label">Hot Leads</div>
-          <div class="kpi-val">{{ hot_leads|length }}</div>
-          <div class="kpi-sub">Budget ≥ 130K OMR</div>
-          <div class="kpi-icon">🔥</div>
-        </div>
-        <div class="kpi" style="--kpi-color:var(--purple)">
-          <div class="kpi-label">Conv. Rate</div>
-          <div class="kpi-val">{{ conv_rate }}%</div>
-          <div class="kpi-sub">Leads → Booking</div>
-          <div class="kpi-icon">◑</div>
-        </div>
+      <!-- KPIs — rendered via JS from convData -->
+      <div class="kpi-row" id="kpi-row">
+        <div class="kpi" style="--kpi-c:var(--gold)"><div class="kpi-label">Total Leads</div><div class="kpi-val" id="kpi-total">0</div><div class="kpi-sub">All time</div><div class="kpi-icon">◈</div></div>
+        <div class="kpi" style="--kpi-c:var(--blue)"><div class="kpi-label">AI Nurturing</div><div class="kpi-val" id="kpi-nurturing">0</div><div class="kpi-sub">Bot active now</div><div class="kpi-icon">◎</div></div>
+        <div class="kpi" style="--kpi-c:var(--green)"><div class="kpi-label">Bookings</div><div class="kpi-val" id="kpi-booked">0</div><div class="kpi-sub">Viewing confirmed</div><div class="kpi-icon">✓</div></div>
+        <div class="kpi" style="--kpi-c:var(--red)"><div class="kpi-label">Hot Leads</div><div class="kpi-val" id="kpi-hot">0</div><div class="kpi-sub">Budget ≥ 130K OMR</div><div class="kpi-icon">🔥</div></div>
+        <div class="kpi" style="--kpi-c:var(--purple)"><div class="kpi-label">Conv. Rate</div><div class="kpi-val" id="kpi-cvr">0%</div><div class="kpi-sub">Leads → Booking</div><div class="kpi-icon">◑</div></div>
       </div>
 
-      <!-- CHART ROW -->
+      <!-- Charts -->
       <div class="chart-row">
-
         <!-- Funnel -->
         <div class="chart-card">
-          <div class="chart-header">
-            <div>
-              <div class="chart-title">Conversion Funnel</div>
-              <div class="chart-sub">Lead journey stages</div>
-            </div>
-          </div>
-          {% set qual = conversations.values()|selectattr('state','in',['asked_type','asked_budget','asked_timeline'])|list|length %}
-          {% set rec_sent = conversations.values()|selectattr('state','in',['ai_nurturing','handed_over'])|list|length %}
-          <div class="funnel">
-            <div class="funnel-bar-wrap">
-              <div class="funnel-label">Leads In</div>
-              <div class="funnel-track">
-                <div class="funnel-fill" style="width:100%;background:var(--gold)">{{ total }}</div>
-              </div>
-              <div class="funnel-count">{{ total }}</div>
-            </div>
-            <div class="funnel-bar-wrap">
-              <div class="funnel-label">Qualifying</div>
-              <div class="funnel-track">
-                <div class="funnel-fill" style="width:{% if total>0 %}{{ [(qual/total*100)|int, 100]|min }}{% else %}0{% endif %}%;background:var(--blue)">{{ qual }}</div>
-              </div>
-              <div class="funnel-count">{{ qual }}</div>
-            </div>
-            <div class="funnel-bar-wrap">
-              <div class="funnel-label">Rec. Sent</div>
-              <div class="funnel-track">
-                <div class="funnel-fill" style="width:{% if total>0 %}{{ [(rec_sent/total*100)|int, 100]|min }}{% else %}0{% endif %}%;background:var(--amber)">{{ rec_sent }}</div>
-              </div>
-              <div class="funnel-count">{{ rec_sent }}</div>
-            </div>
-            <div class="funnel-bar-wrap">
-              <div class="funnel-label">AI Nurture</div>
-              <div class="funnel-track">
-                <div class="funnel-fill" style="width:{% if total>0 %}{{ [(nurturing/total*100)|int, 100]|min }}{% else %}0{% endif %}%;background:var(--purple)">{{ nurturing }}</div>
-              </div>
-              <div class="funnel-count">{{ nurturing }}</div>
-            </div>
-            <div class="funnel-bar-wrap">
-              <div class="funnel-label">Booked</div>
-              <div class="funnel-track">
-                <div class="funnel-fill" style="width:{% if total>0 %}{{ [(booked/total*100)|int, 100]|min }}{% else %}0{% endif %}%;background:var(--green)">{{ booked }}</div>
-              </div>
-              <div class="funnel-count">{{ booked }}</div>
-            </div>
-          </div>
+          <div class="chart-title">Conversion Funnel</div>
+          <div class="chart-sub">Lead journey stages</div>
+          <div class="funnel" id="funnel"></div>
         </div>
-
-        <!-- Budget Donut -->
+        <!-- Budget donut -->
         <div class="chart-card">
-          <div class="chart-header">
-            <div>
-              <div class="chart-title">Budget Mix</div>
-              <div class="chart-sub">By range</div>
-            </div>
-          </div>
-          {% set b1 = conversations.values()|selectattr('budget','defined')|selectattr('budget','ne',None)|selectattr('budget','contains','Under')|list|length %}
-          {% set b2 = conversations.values()|selectattr('budget','defined')|selectattr('budget','ne',None)|selectattr('budget','contains','60000-90000')|list|length %}
-          {% set b3 = conversations.values()|selectattr('budget','defined')|selectattr('budget','ne',None)|selectattr('budget','contains','90000-130000')|list|length %}
-          {% set b4 = conversations.values()|selectattr('budget','defined')|selectattr('budget','ne',None)|selectattr('budget','contains','130000-200000')|list|length %}
-          {% set b5 = conversations.values()|selectattr('budget','defined')|selectattr('budget','ne',None)|selectattr('budget','contains','Above')|list|length %}
-          {% set btotal = b1+b2+b3+b4+b5 %}
+          <div class="chart-title">Budget Mix</div>
+          <div class="chart-sub">By range</div>
           <div class="donut-wrap">
-            <svg class="donut-svg" viewBox="0 0 100 100">
+            <svg class="donut-svg" id="budget-donut" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="38" fill="none" stroke="#1E2435" stroke-width="14"/>
-              {% if btotal > 0 %}
-                {% set colors = ['#C9A84C','#60A5FA','#34D399','#F87171','#A78BFA'] %}
-                {% set vals = [b1,b2,b3,b4,b5] %}
-                {% set circumference = 238.76 %}
-                {% set offset_ns = namespace(val=0) %}
-                {% for i in range(5) %}
-                  {% set pct = vals[i]/btotal %}
-                  {% set dash = pct * circumference %}
-                  {% set gap = circumference - dash %}
-                  {% if pct > 0 %}
-                  <circle cx="50" cy="50" r="38" fill="none"
-                    stroke="{{ colors[i] }}" stroke-width="14"
-                    stroke-dasharray="{{ dash|round(2) }} {{ gap|round(2) }}"
-                    stroke-dashoffset="{{ -offset_ns.val|round(2) }}"
-                    transform="rotate(-90 50 50)" opacity=".85"/>
-                  {% set offset_ns.val = offset_ns.val + dash %}
-                  {% endif %}
-                {% endfor %}
-              {% endif %}
-              <text x="50" y="46" text-anchor="middle" font-family="DM Mono" font-size="13" font-weight="500" fill="#E4DFCE">{{ btotal }}</text>
+              <text x="50" y="46" text-anchor="middle" font-family="DM Mono" font-size="13" font-weight="500" fill="#E4DFCE" id="donut-total">0</text>
               <text x="50" y="58" text-anchor="middle" font-family="DM Mono" font-size="7" fill="#4A5068">LEADS</text>
             </svg>
-            <div class="donut-legend">
-              <div class="legend-item"><div class="legend-dot" style="background:#C9A84C"></div><div class="legend-label">&lt;60K</div><div class="legend-val">{{ b1 }}</div></div>
-              <div class="legend-item"><div class="legend-dot" style="background:#60A5FA"></div><div class="legend-label">60–90K</div><div class="legend-val">{{ b2 }}</div></div>
-              <div class="legend-item"><div class="legend-dot" style="background:#34D399"></div><div class="legend-label">90–130K</div><div class="legend-val">{{ b3 }}</div></div>
-              <div class="legend-item"><div class="legend-dot" style="background:#F87171"></div><div class="legend-label">130–200K</div><div class="legend-val">{{ b4 }}</div></div>
-              <div class="legend-item"><div class="legend-dot" style="background:#A78BFA"></div><div class="legend-label">&gt;200K</div><div class="legend-val">{{ b5 }}</div></div>
-            </div>
+            <div class="donut-legend" id="budget-legend"></div>
           </div>
         </div>
-
-        <!-- Source Mix -->
+        <!-- Source donut -->
         <div class="chart-card">
-          <div class="chart-header">
-            <div>
-              <div class="chart-title">Lead Source</div>
-              <div class="chart-sub">WhatsApp vs Web</div>
-            </div>
-          </div>
-          {% set wa_leads = total - web_leads %}
+          <div class="chart-title">Lead Source</div>
+          <div class="chart-sub">WhatsApp vs Web</div>
           <div class="donut-wrap">
-            <svg class="donut-svg" viewBox="0 0 100 100">
+            <svg class="donut-svg" id="source-donut" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="38" fill="none" stroke="#1E2435" stroke-width="14"/>
-              {% if total > 0 %}
-                {% set wa_dash = (wa_leads/total * 238.76)|round(2) %}
-                {% set web_dash = (web_leads/total * 238.76)|round(2) %}
-                <circle cx="50" cy="50" r="38" fill="none"
-                  stroke="#25D366" stroke-width="14"
-                  stroke-dasharray="{{ wa_dash }} {{ 238.76 - wa_dash }}"
-                  stroke-dashoffset="0" transform="rotate(-90 50 50)" opacity=".85"/>
-                <circle cx="50" cy="50" r="38" fill="none"
-                  stroke="#60A5FA" stroke-width="14"
-                  stroke-dasharray="{{ web_dash }} {{ 238.76 - web_dash }}"
-                  stroke-dashoffset="{{ -wa_dash }}" transform="rotate(-90 50 50)" opacity=".85"/>
-              {% endif %}
-              <text x="50" y="46" text-anchor="middle" font-family="DM Mono" font-size="13" font-weight="500" fill="#E4DFCE">{{ total }}</text>
+              <text x="50" y="46" text-anchor="middle" font-family="DM Mono" font-size="13" font-weight="500" fill="#E4DFCE" id="src-total">0</text>
               <text x="50" y="58" text-anchor="middle" font-family="DM Mono" font-size="7" fill="#4A5068">TOTAL</text>
             </svg>
-            <div class="donut-legend">
-              <div class="legend-item"><div class="legend-dot" style="background:#25D366"></div><div class="legend-label">WhatsApp</div><div class="legend-val">{{ wa_leads }}</div></div>
-              <div class="legend-item"><div class="legend-dot" style="background:#60A5FA"></div><div class="legend-label">Web Form</div><div class="legend-val">{{ web_leads }}</div></div>
-            </div>
+            <div class="donut-legend" id="source-legend"></div>
           </div>
         </div>
-
       </div>
 
-      <!-- RECENT ACTIVITY TABLE -->
+      <!-- Recent activity table -->
       <div class="table-card">
         <div class="table-head">
           <div class="table-title">Recent Activity</div>
-          <div style="font-size:10px;color:var(--text-muted);font-family:var(--mono)">Latest 10 leads · Auto-refreshes in <span id="countdown">30</span>s</div>
+          <div class="table-meta">Latest 10 leads · Auto-refresh in <span id="countdown">30</span>s</div>
         </div>
         <table>
-          <thead>
-            <tr>
-              <th>Lead</th>
-              <th>Phone</th>
-              <th>Budget</th>
-              <th>Property</th>
-              <th>Source</th>
-              <th>Status</th>
-              <th>Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% if conversations %}
-              {% for phone, conv in conversations.items()|list|reverse|list[:10] %}
-              {% set is_hot = conv.budget and ('130000' in conv.budget or 'Above' in conv.budget or '200000' in conv.budget) %}
-              <tr onclick="goToChat('{{ phone }}')">
-                <td>
-                  <div style="display:flex;align-items:center;gap:8px">
-                    {% if is_hot %}<span style="font-size:11px">🔥</span>{% endif %}
-                    <span class="td-name">{{ conv.name or ('Lead +' + phone) }}</span>
-                  </div>
-                </td>
-                <td class="td-phone">+{{ phone }}</td>
-                <td>
-                  {% if conv.budget %}
-                    <span class="badge {% if is_hot %}badge-red{% else %}badge-muted{% endif %}">{{ conv.budget.replace(' OMR','') }}</span>
-                  {% else %}—{% endif %}
-                </td>
-                <td style="font-size:11px">{{ conv.property_type.replace('_',' ')|title if conv.property_type else '—' }}</td>
-                <td>
-                  {% if conv.source == 'web_form' %}
-                    <span class="badge badge-blue">Web</span>
-                  {% else %}
-                    <span class="badge badge-muted" style="color:#25D366;background:rgba(37,211,102,.06);border-color:rgba(37,211,102,.15)">WA</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if conv.booking_confirmed %}
-                    <span class="badge badge-green">Booked</span>
-                  {% elif conv.state == 'ai_nurturing' %}
-                    <span class="badge badge-blue">AI Nurturing</span>
-                  {% elif conv.state == 'handed_over' %}
-                    <span class="badge badge-amber">Agent Active</span>
-                  {% elif conv.state in ['asked_type','asked_budget','asked_timeline'] %}
-                    <span class="badge badge-purple">Qualifying</span>
-                  {% else %}
-                    <span class="badge badge-muted">{{ conv.state|title }}</span>
-                  {% endif %}
-                </td>
-                <td class="td-time">
-                  {% if conv.history %}{{ conv.history[-1].time }}{% else %}—{% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            {% else %}
-              <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);font-size:12px">No leads yet. Conversations will appear here.</td></tr>
-            {% endif %}
-          </tbody>
+          <thead><tr><th>Lead</th><th>Phone</th><th>Budget</th><th>Property</th><th>Source</th><th>Status</th><th>Last Msg</th></tr></thead>
+          <tbody id="recent-tbody"></tbody>
         </table>
       </div>
     </div>
-    <!-- END OVERVIEW -->
+    <!-- end overview -->
 
-
-    <!-- ── PIPELINE PAGE ── -->
+    <!-- ══ PIPELINE PAGE ══ -->
     <div class="page" id="page-pipeline">
       <div class="table-card">
         <div class="table-head">
           <div class="table-title">Full Pipeline</div>
-          <div class="table-filters">
-            <button class="filter-btn active" onclick="filterTable(this,'all')">All</button>
-            <button class="filter-btn" onclick="filterTable(this,'nurturing')">Nurturing</button>
-            <button class="filter-btn" onclick="filterTable(this,'booked')">Booked</button>
-            <button class="filter-btn" onclick="filterTable(this,'hot')">Hot</button>
+          <div class="filter-row">
+            <button class="fbtn active" onclick="filterPipeline(this,'all')">All</button>
+            <button class="fbtn" onclick="filterPipeline(this,'nurturing')">Nurturing</button>
+            <button class="fbtn" onclick="filterPipeline(this,'booked')">Booked</button>
+            <button class="fbtn" onclick="filterPipeline(this,'hot')">Hot</button>
           </div>
         </div>
-        <table id="pipeline-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Lead</th>
-              <th>Phone</th>
-              <th>Budget</th>
-              <th>Property Type</th>
-              <th>Timeline</th>
-              <th>Language</th>
-              <th>Source</th>
-              <th>Status</th>
-              <th>Messages</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% if conversations %}
-              {% for phone, conv in conversations.items()|list|reverse %}
-              {% set is_hot = conv.budget and ('130000' in conv.budget or 'Above' in conv.budget or '200000' in conv.budget) %}
-              <tr
-                data-state="{{ conv.state }}"
-                data-hot="{{ 'yes' if is_hot else 'no' }}"
-                data-booking="{{ 'yes' if conv.booking_confirmed else 'no' }}"
-              >
-                <td style="color:var(--text-muted);font-family:var(--mono);font-size:10px">{{ loop.index }}</td>
-                <td>
-                  <div style="display:flex;align-items:center;gap:7px">
-                    <div style="width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--gold);flex-shrink:0">{{ (conv.name or phone)[0]|upper }}</div>
-                    <div>
-                      <div class="td-name">{{ conv.name or 'Unknown' }}</div>
-                      {% if conv.email %}<div style="font-size:10px;color:var(--text-muted)">{{ conv.email }}</div>{% endif %}
-                    </div>
-                    {% if is_hot %}<span style="font-size:11px">🔥</span>{% endif %}
-                  </div>
-                </td>
-                <td class="td-phone">+{{ phone }}</td>
-                <td>{% if conv.budget %}<span class="badge {% if is_hot %}badge-red{% else %}badge-gold{% endif %}">{{ conv.budget.replace(' OMR','') }}</span>{% else %}—{% endif %}</td>
-                <td style="font-size:11px">{{ conv.property_type.replace('_',' ')|title if conv.property_type else '—' }}</td>
-                <td style="font-size:11px;color:var(--text-muted)">{{ conv.timeline or '—' }}</td>
-                <td>
-                  <span class="badge badge-muted">{{ conv.language|title }}</span>
-                </td>
-                <td>
-                  {% if conv.source == 'web_form' %}
-                    <span class="badge badge-blue">Web</span>
-                  {% else %}
-                    <span class="badge badge-muted" style="color:#25D366;background:rgba(37,211,102,.06);border-color:rgba(37,211,102,.15)">WA</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if conv.booking_confirmed %}
-                    <span class="badge badge-green">Booked ✓</span>
-                  {% elif conv.state == 'ai_nurturing' %}
-                    <span class="badge badge-blue">AI Nurturing</span>
-                  {% elif conv.state == 'handed_over' %}
-                    <span class="badge badge-amber">Agent Active</span>
-                  {% elif conv.state in ['asked_type','asked_budget','asked_timeline'] %}
-                    <span class="badge badge-purple">Qualifying</span>
-                  {% elif conv.state == 'asked_name' %}
-                    <span class="badge badge-muted">Started</span>
-                  {% else %}
-                    <span class="badge badge-muted">{{ conv.state|title }}</span>
-                  {% endif %}
-                </td>
-                <td style="font-family:var(--mono);font-size:11px">{{ conv.history|length }}</td>
-                <td>
-                  <button onclick="goToChat('{{ phone }}')"
-                    style="background:transparent;border:1px solid var(--border2);color:var(--gold);padding:4px 10px;border-radius:4px;font-size:10px;font-family:var(--mono);cursor:pointer;transition:all .15s"
-                    onmouseover="this.style.background='var(--gold-glow)'"
-                    onmouseout="this.style.background='transparent'">
-                    Open Chat
-                  </button>
-                </td>
-              </tr>
-              {% endfor %}
-            {% else %}
-              <tr><td colspan="11" style="text-align:center;padding:2rem;color:var(--text-muted);font-size:12px">No leads in pipeline yet.</td></tr>
-            {% endif %}
-          </tbody>
+        <table>
+          <thead><tr><th>#</th><th>Lead</th><th>Phone</th><th>Budget</th><th>Property</th><th>Timeline</th><th>Language</th><th>Source</th><th>Status</th><th>Msgs</th><th>Action</th></tr></thead>
+          <tbody id="pipeline-tbody"></tbody>
         </table>
       </div>
     </div>
-    <!-- END PIPELINE -->
+    <!-- end pipeline -->
 
-
-    <!-- ── CHAT PAGE ── -->
+    <!-- ══ CHAT PAGE ══ -->
     <div class="page" id="page-chat" style="padding:1rem">
       <div class="chat-layout">
-
-        <!-- Lead List -->
         <div class="lead-list">
-          <div class="lead-list-head">Conversations ({{ conversations|length }})</div>
-          <div class="lead-list-body">
-            {% if conversations %}
-              {% for phone, conv in conversations.items()|list|reverse %}
-              {% set is_hot = conv.budget and ('130000' in conv.budget or 'Above' in conv.budget or '200000' in conv.budget) %}
-              <div class="lead-item" id="li-{{ phone }}" onclick="openChat('{{ phone }}')">
-                <div class="li-avatar">{{ (conv.name or phone)[0]|upper }}</div>
-                <div class="li-info">
-                  <div class="li-name">{{ conv.name or ('Lead +' + phone) }}{% if is_hot %} 🔥{% endif %}</div>
-                  <div class="li-meta">
-                    {% if conv.booking_confirmed %}✓ Booked
-                    {% elif conv.state == 'ai_nurturing' %}Bot nurturing…
-                    {% elif conv.state == 'handed_over' %}Agent active
-                    {% else %}{{ conv.state|replace('_',' ')|title }}{% endif %}
-                  </div>
-                </div>
-                <div class="li-right">
-                  <div class="li-time">{% if conv.history %}{{ conv.history[-1].time }}{% endif %}</div>
-                  {% if conv.booking_confirmed %}<div style="font-size:10px;color:var(--green)">✓</div>{% endif %}
-                </div>
-              </div>
-              {% endfor %}
-            {% else %}
-              <div style="padding:2rem;text-align:center;color:var(--text-muted);font-size:12px">No conversations yet.</div>
-            {% endif %}
-          </div>
+          <div class="ll-head">Conversations (<span id="conv-count">0</span>)</div>
+          <div class="ll-body" id="ll-body"></div>
         </div>
-
-        <!-- Chat Panel -->
         <div class="chat-panel" id="chat-panel">
-          <div class="no-chat" id="no-chat-placeholder">
-            <div class="no-chat-icon">◎</div>
-            <div>Select a conversation to view chat</div>
-            <div style="font-size:11px;margin-top:4px;color:var(--text-muted);font-family:var(--mono)">{{ conversations|length }} lead{{ 's' if conversations|length != 1 else '' }} in pipeline</div>
+          <div class="no-chat-msg" id="no-chat">
+            <div style="font-size:36px;opacity:.2">◎</div>
+            <div>Select a conversation</div>
           </div>
-
-          <!-- Populated dynamically by JS -->
           <div id="chat-active" style="display:none;flex-direction:column;height:100%;overflow:hidden">
-            <div class="chat-header" id="chat-hdr">
-              <div class="chat-header-avatar" id="chat-hdr-avatar"></div>
-              <div class="chat-header-info">
-                <div class="chat-header-name" id="chat-hdr-name"></div>
-                <div class="chat-header-sub" id="chat-hdr-sub"></div>
-              </div>
-              <div class="chat-header-badges" id="chat-hdr-badges"></div>
+            <div class="chat-hdr">
+              <div class="chat-av" id="c-av"></div>
+              <div style="flex:1"><div class="chat-hdr-name" id="c-name"></div><div class="chat-hdr-sub" id="c-sub"></div></div>
+              <div class="chat-hdr-badges" id="c-badges"></div>
             </div>
-            <div class="lead-detail-strip" id="chat-details"></div>
-            <div class="chat-messages" id="chat-msgs"></div>
-            <div class="send-feedback" id="send-feedback">✓ Message sent via WhatsApp</div>
-            <div class="reply-bar" id="reply-bar">
+            <div class="detail-strip" id="c-details"></div>
+            <div class="chat-msgs" id="c-msgs"></div>
+            <div class="send-ok" id="send-ok">✓ Sent via WhatsApp</div>
+            <div class="reply-bar">
               <textarea class="reply-input" id="reply-input" placeholder="Type your message…" onkeydown="handleEnter(event)"></textarea>
-              <button class="btn-send" id="btn-send" onclick="sendMessage()">Send</button>
+              <button class="btn-send" id="btn-send" onclick="sendMsg()">Send</button>
             </div>
           </div>
         </div>
-
       </div>
     </div>
-    <!-- END CHAT -->
+    <!-- end chat -->
 
-  </div><!-- end content -->
-</div><!-- end shell -->
-
+  </div>
+</div>
 
 <script>
-const DASHBOARD_KEY = "{{ key }}";
+// ── Data passed from Flask ────────────────────────────────────────────────────
+const DASHBOARD_KEY = {{ key | tojson }};
+const convData      = {{ conversations | tojson }};
+
+// ── Computed stats (all in JS — no broken Jinja2 filters) ────────────────────
+const phones = Object.keys(convData);
+const total   = phones.length;
+let booked=0, nurturing=0, hot=0, web=0, wa=0;
+let b1=0,b2=0,b3=0,b4=0,b5=0;
+let fQual=0, fRecSent=0;
+
+phones.forEach(p => {
+  const c = convData[p];
+  if (c.booking_confirmed) booked++;
+  if (c.state === 'ai_nurturing') nurturing++;
+  if (['asked_type','asked_budget','asked_timeline'].includes(c.state)) fQual++;
+  if (['ai_nurturing','handed_over'].includes(c.state)) fRecSent++;
+  const b = (c.budget||'');
+  if (b.includes('130000')||b.includes('200000')||b.includes('Above')) hot++;
+  if (c.source === 'web_form') web++; else wa++;
+  if (b.includes('Under'))           b1++;
+  else if (b.includes('60000-90000')) b2++;
+  else if (b.includes('90000-130000'))b3++;
+  else if (b.includes('130000-200000'))b4++;
+  else if (b.includes('Above'))       b5++;
+});
+const cvr = total > 0 ? Math.round(booked/total*100*10)/10 : 0;
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+function cap(s){ return (s||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
+function isHot(c){ const b=c.budget||''; return b.includes('130000')||b.includes('200000')||b.includes('Above'); }
+function statusBadge(c){
+  if (c.booking_confirmed)         return '<span class="badge b-green">Booked ✓</span>';
+  if (c.state==='ai_nurturing')    return '<span class="badge b-blue">AI Nurturing</span>';
+  if (c.state==='handed_over')     return '<span class="badge b-amber">Agent Active</span>';
+  if (['asked_type','asked_budget','asked_timeline'].includes(c.state)) return '<span class="badge b-purple">Qualifying</span>';
+  if (c.state==='asked_name')      return '<span class="badge b-muted">Started</span>';
+  return `<span class="badge b-muted">${cap(c.state)}</span>`;
+}
+function sourceBadge(c){ return c.source==='web_form' ? '<span class="badge b-blue">Web</span>' : '<span class="badge b-wa">WA</span>'; }
+function budgetBadge(c){
+  if (!c.budget) return '—';
+  const cls = isHot(c) ? 'b-red' : 'b-gold';
+  return `<span class="badge ${cls}">${(c.budget).replace(' OMR','')}</span>`;
+}
+
+// ── Populate KPIs ─────────────────────────────────────────────────────────────
+document.getElementById('kpi-total').textContent     = total;
+document.getElementById('kpi-nurturing').textContent = nurturing;
+document.getElementById('kpi-booked').textContent    = booked;
+document.getElementById('kpi-hot').textContent       = hot;
+document.getElementById('kpi-cvr').textContent       = cvr + '%';
+document.getElementById('nav-count').textContent     = total;
+document.getElementById('conv-count').textContent    = total;
+
+// ── Funnel chart ──────────────────────────────────────────────────────────────
+(function(){
+  const CIRC = 238.76;
+  const rows = [
+    {label:'Leads In', n:total, color:'var(--gold)'},
+    {label:'Qualifying', n:fQual, color:'var(--blue)'},
+    {label:'Rec. Sent', n:fRecSent, color:'var(--amber)'},
+    {label:'AI Nurture', n:nurturing, color:'var(--purple)'},
+    {label:'Booked', n:booked, color:'var(--green)'},
+  ];
+  const max = total || 1;
+  const html = rows.map(r => {
+    const pct = Math.min(100, Math.round(r.n/max*100));
+    return `<div class="funnel-row">
+      <div class="funnel-label">${r.label}</div>
+      <div class="funnel-track"><div class="funnel-fill" style="width:${pct}%;background:${r.color}">${r.n}</div></div>
+      <div class="funnel-n">${r.n}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('funnel').innerHTML = html;
+})();
+
+// ── Budget donut ──────────────────────────────────────────────────────────────
+(function(){
+  const CIRC = 238.76;
+  const btotal = b1+b2+b3+b4+b5;
+  document.getElementById('donut-total').textContent = btotal;
+  const slices = [
+    {n:b1, color:'#C9A84C', label:'<60K'},
+    {n:b2, color:'#60A5FA', label:'60–90K'},
+    {n:b3, color:'#34D399', label:'90–130K'},
+    {n:b4, color:'#F87171', label:'130–200K'},
+    {n:b5, color:'#A78BFA', label:'>200K'},
+  ];
+  const svg = document.getElementById('budget-donut');
+  let offset = 0;
+  slices.forEach(s => {
+    if (btotal > 0 && s.n > 0) {
+      const dash = s.n/btotal*CIRC;
+      const circ = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      circ.setAttribute('cx','50'); circ.setAttribute('cy','50'); circ.setAttribute('r','38');
+      circ.setAttribute('fill','none'); circ.setAttribute('stroke',s.color); circ.setAttribute('stroke-width','14');
+      circ.setAttribute('stroke-dasharray',`${dash.toFixed(2)} ${(CIRC-dash).toFixed(2)}`);
+      circ.setAttribute('stroke-dashoffset',`${-offset.toFixed(2)}`);
+      circ.setAttribute('transform','rotate(-90 50 50)'); circ.setAttribute('opacity','.85');
+      svg.insertBefore(circ, svg.querySelector('text'));
+      offset += dash;
+    }
+  });
+  const leg = document.getElementById('budget-legend');
+  leg.innerHTML = slices.map(s => `<div class="legend-row"><div class="legend-dot" style="background:${s.color}"></div><div class="legend-lbl">${s.label}</div><div class="legend-val">${s.n}</div></div>`).join('');
+})();
+
+// ── Source donut ──────────────────────────────────────────────────────────────
+(function(){
+  const CIRC = 238.76;
+  document.getElementById('src-total').textContent = total;
+  const svg = document.getElementById('source-donut');
+  if (total > 0) {
+    const slices = [{n:wa,color:'#25D366'},{n:web,color:'#60A5FA'}];
+    let offset = 0;
+    slices.forEach(s => {
+      if (s.n > 0) {
+        const dash = s.n/total*CIRC;
+        const circ = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        circ.setAttribute('cx','50'); circ.setAttribute('cy','50'); circ.setAttribute('r','38');
+        circ.setAttribute('fill','none'); circ.setAttribute('stroke',s.color); circ.setAttribute('stroke-width','14');
+        circ.setAttribute('stroke-dasharray',`${dash.toFixed(2)} ${(CIRC-dash).toFixed(2)}`);
+        circ.setAttribute('stroke-dashoffset',`${-offset.toFixed(2)}`);
+        circ.setAttribute('transform','rotate(-90 50 50)'); circ.setAttribute('opacity','.85');
+        svg.insertBefore(circ, svg.querySelector('text'));
+        offset += dash;
+      }
+    });
+  }
+  document.getElementById('source-legend').innerHTML = `
+    <div class="legend-row"><div class="legend-dot" style="background:#25D366"></div><div class="legend-lbl">WhatsApp</div><div class="legend-val">${wa}</div></div>
+    <div class="legend-row"><div class="legend-dot" style="background:#60A5FA"></div><div class="legend-lbl">Web Form</div><div class="legend-val">${web}</div></div>`;
+})();
+
+// ── Recent activity table ─────────────────────────────────────────────────────
+(function(){
+  const recent = phones.slice().reverse().slice(0,10);
+  const tbody = document.getElementById('recent-tbody');
+  if (!recent.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);font-size:12px">No leads yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = recent.map(p => {
+    const c = convData[p];
+    const h = (c.history||[]);
+    const lastTime = h.length ? h[h.length-1].time : '—';
+    return `<tr onclick="goToChat('${p}')">
+      <td><div style="display:flex;align-items:center;gap:6px">${isHot(c)?'<span>🔥</span>':''}<span class="td-name">${esc(c.name||('Lead +'+p))}</span></div></td>
+      <td class="td-mono">+${p}</td>
+      <td>${budgetBadge(c)}</td>
+      <td style="font-size:11px">${cap(c.property_type)||'—'}</td>
+      <td>${sourceBadge(c)}</td>
+      <td>${statusBadge(c)}</td>
+      <td class="td-mono" style="font-size:10px">${lastTime}</td>
+    </tr>`;
+  }).join('');
+})();
+
+// ── Pipeline table ────────────────────────────────────────────────────────────
+(function(){
+  const all = phones.slice().reverse();
+  const tbody = document.getElementById('pipeline-tbody');
+  if (!all.length) {
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:2rem;color:var(--text-muted);font-size:12px">No leads yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = all.map((p,i) => {
+    const c = convData[p];
+    const h = isHot(c);
+    return `<tr data-state="${c.state}" data-hot="${h?'y':'n'}" data-booked="${c.booking_confirmed?'y':'n'}">
+      <td class="td-mono" style="font-size:10px;color:var(--text-muted)">${i+1}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--gold);flex-shrink:0">${(c.name||p)[0].toUpperCase()}</div>
+          <div><div class="td-name">${esc(c.name||'Unknown')}</div>${c.email?`<div style="font-size:10px;color:var(--text-muted)">${esc(c.email)}</div>`:''}</div>
+          ${h?'<span>🔥</span>':''}
+        </div>
+      </td>
+      <td class="td-mono">+${p}</td>
+      <td>${budgetBadge(c)}</td>
+      <td style="font-size:11px">${cap(c.property_type)||'—'}</td>
+      <td style="font-size:11px;color:var(--text-muted)">${esc(c.timeline)||'—'}</td>
+      <td><span class="badge b-muted">${cap(c.language)}</span></td>
+      <td>${sourceBadge(c)}</td>
+      <td>${statusBadge(c)}</td>
+      <td class="td-mono">${(c.history||[]).length}</td>
+      <td>
+        <button onclick="goToChat('${p}')" style="background:transparent;border:1px solid var(--border2);color:var(--gold);padding:4px 10px;border-radius:4px;font-size:10px;font-family:var(--mono);cursor:pointer"
+          onmouseover="this.style.background='var(--gold-glow)'" onmouseout="this.style.background='transparent'">Open Chat</button>
+      </td>
+    </tr>`;
+  }).join('');
+})();
+
+// ── Lead list (chat sidebar) ──────────────────────────────────────────────────
+(function(){
+  const llBody = document.getElementById('ll-body');
+  const all = phones.slice().reverse();
+  if (!all.length) { llBody.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-muted);font-size:12px">No conversations yet.</div>'; return; }
+  llBody.innerHTML = all.map(p => {
+    const c = convData[p];
+    const h = (c.history||[]);
+    const lastTime = h.length ? h[h.length-1].time : '';
+    const sub = c.booking_confirmed ? '✓ Booked' : c.state==='ai_nurturing' ? 'Bot nurturing…' : c.state==='handed_over' ? 'Agent active' : cap(c.state);
+    return `<div class="ll-item" id="li-${p}" onclick="openChat('${p}')">
+      <div class="ll-av">${(c.name||p)[0].toUpperCase()}</div>
+      <div class="ll-info">
+        <div class="ll-name">${esc(c.name||('Lead +'+p))}${isHot(c)?' 🔥':''}</div>
+        <div class="ll-meta">${sub}</div>
+      </div>
+      <div class="ll-time">${lastTime}</div>
+    </div>`;
+  }).join('');
+})();
+
+// ── Page navigation ───────────────────────────────────────────────────────────
 let activePhone = null;
-let refreshTimer = 30;
 
-// Conversation data from server
-const convData = {{ conversations | tojson }};
-
-function showPage(name, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
+function showPage(name, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
   if(el) el.classList.add('active');
 }
 
-function goToChat(phone) {
-  // Switch to chat page and open conversation
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-chat').classList.add('active');
-  document.querySelectorAll('.nav-item')[2].classList.add('active');
-  setTimeout(() => openChat(phone), 50);
+function goToChat(phone){
+  showPage('chat', document.getElementById('nav-chat'));
+  setTimeout(()=>openChat(phone), 30);
 }
 
-function openChat(phone) {
-  activePhone = phone;
-  const conv = convData[phone];
-  if(!conv) return;
-
-  // Update lead list active state
-  document.querySelectorAll('.lead-item').forEach(el => el.classList.remove('active'));
-  const li = document.getElementById('li-' + phone);
-  if(li) li.classList.add('active');
-
-  const isHot = conv.budget && (conv.budget.includes('130000') || conv.budget.includes('Above') || conv.budget.includes('200000'));
-
-  // Show chat active panel
-  document.getElementById('no-chat-placeholder').style.display = 'none';
-  const active = document.getElementById('chat-active');
-  active.style.display = 'flex';
-
-  // Header
-  document.getElementById('chat-hdr-avatar').textContent = (conv.name || phone)[0].toUpperCase();
-  document.getElementById('chat-hdr-name').textContent = conv.name || ('Lead +' + phone);
-  document.getElementById('chat-hdr-sub').textContent = '+' + phone + ' · ' + (conv.language||'').replace(/^\w/, c => c.toUpperCase()) + ' · ' + (conv.history||[]).length + ' messages';
-
-  const badges = document.getElementById('chat-hdr-badges');
-  badges.innerHTML = '';
-  if(isHot) badges.innerHTML += '<span class="badge badge-red">HOT</span>';
-  if(conv.booking_confirmed) badges.innerHTML += '<span class="badge badge-green">Booked</span>';
-  else if(conv.state === 'ai_nurturing') badges.innerHTML += '<span class="badge badge-blue">AI Nurturing</span>';
-  else if(conv.state === 'handed_over') badges.innerHTML += '<span class="badge badge-amber">Agent Active</span>';
-  if(conv.budget) badges.innerHTML += '<span class="badge badge-gold">' + conv.budget.replace(' OMR','') + ' OMR</span>';
-
-  // Details strip
-  const details = document.getElementById('chat-details');
-  details.innerHTML = [
-    conv.name ? `<div class="ld-item"><div class="ld-label">Name</div><div class="ld-val">${conv.name}</div></div>` : '',
-    conv.budget ? `<div class="ld-item"><div class="ld-label">Budget</div><div class="ld-val">${conv.budget}</div></div>` : '',
-    conv.property_type ? `<div class="ld-item"><div class="ld-label">Property</div><div class="ld-val">${conv.property_type.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</div></div>` : '',
-    conv.timeline ? `<div class="ld-item"><div class="ld-label">Timeline</div><div class="ld-val">${conv.timeline}</div></div>` : '',
-    `<div class="ld-item"><div class="ld-label">Source</div><div class="ld-val">${(conv.source||'whatsapp') === 'web_form' ? 'Web Form' : 'WhatsApp'}</div></div>`,
-    `<div class="ld-item"><div class="ld-label">Language</div><div class="ld-val">${(conv.language||'').replace(/^\w/,c=>c.toUpperCase())}</div></div>`,
-  ].join('');
-
-  // Messages
-  const msgs = document.getElementById('chat-msgs');
-  msgs.innerHTML = '';
-  if(conv.history && conv.history.length) {
-    conv.history.forEach(msg => {
-      const div = document.createElement('div');
-      div.className = 'msg ' + msg.role;
-      const roleLabel = msg.role === 'user' ? 'Lead' : msg.role === 'bot' ? 'PropertyIQ Bot' : 'Agent';
-      div.innerHTML = `<div class="msg-role">${roleLabel}</div><div class="msg-bubble">${escHtml(msg.text)}</div><div class="msg-time">${msg.time}</div>`;
-      msgs.appendChild(div);
-    });
-    setTimeout(() => { msgs.scrollTop = msgs.scrollHeight; }, 50);
-  } else {
-    msgs.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:2rem">No messages yet.</div>';
-  }
-
-  // Reply bar — enable for all states (agent can always intervene)
-  const replyBar = document.getElementById('reply-bar');
-  const input = document.getElementById('reply-input');
-  const sendBtn = document.getElementById('btn-send');
-  replyBar.classList.remove('disabled');
-  input.disabled = false;
-  sendBtn.disabled = false;
-  input.placeholder = conv.name ? `Message ${conv.name}…` : 'Type your message…';
+function goFilter(state, el){
+  showPage('pipeline', document.getElementById('nav-pipeline'));
+  setTimeout(()=>{
+    const map = {all:'all',ai_nurturing:'nurturing',handed_over:'booked'};
+    const btns = document.querySelectorAll('.fbtn');
+    btns.forEach(b=>b.classList.remove('active'));
+    const key = map[state]||'all';
+    const target = Array.from(btns).find(b=>b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+key+"'"));
+    if(target){ target.classList.add('active'); applyFilter(key); }
+  }, 50);
 }
 
-function handleEnter(e) {
-  if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-}
-
-function sendMessage() {
-  if(!activePhone) return;
-  const input = document.getElementById('reply-input');
-  const btn = document.getElementById('btn-send');
-  const feedback = document.getElementById('send-feedback');
-  const message = input.value.trim();
-  if(!message) return;
-
-  btn.disabled = true;
-  btn.textContent = 'Sending…';
-
-  const fd = new FormData();
-  fd.append('phone', activePhone);
-  fd.append('message', message);
-  fd.append('key', DASHBOARD_KEY);
-
-  fetch('/agent/send', {method:'POST', body:fd})
-    .then(r => r.json())
-    .then(data => {
-      if(data.success) {
-        feedback.style.display = 'block';
-        setTimeout(() => { feedback.style.display = 'none'; }, 3000);
-        input.value = '';
-        // Append message to chat
-        const msgs = document.getElementById('chat-msgs');
-        const now = new Date();
-        const t = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-        const div = document.createElement('div');
-        div.className = 'msg agent';
-        div.innerHTML = `<div class="msg-role">Agent</div><div class="msg-bubble">${escHtml(message)}</div><div class="msg-time">${t}</div>`;
-        msgs.appendChild(div);
-        msgs.scrollTop = msgs.scrollHeight;
-        // Also update the in-memory data
-        if(!convData[activePhone].history) convData[activePhone].history = [];
-        convData[activePhone].history.push({role:'agent',text:message,time:t});
-      } else {
-        alert('Failed to send. Check your WhatsApp connection.');
-      }
-    })
-    .catch(() => { alert('Network error. Please try again.'); })
-    .finally(() => {
-      btn.disabled = false;
-      btn.textContent = 'Send';
-    });
-}
-
-function escHtml(str) {
-  return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
-}
-
-function filterTable(btn, filter) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+// ── Pipeline filter ───────────────────────────────────────────────────────────
+function filterPipeline(btn, f){
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  document.querySelectorAll('#pipeline-table tbody tr').forEach(row => {
-    if(filter === 'all') { row.style.display = ''; return; }
-    const state = row.dataset.state;
-    const hot = row.dataset.hot === 'yes';
-    const booked = row.dataset.booking === 'yes';
-    let show = false;
-    if(filter === 'nurturing' && state === 'ai_nurturing') show = true;
-    if(filter === 'booked' && booked) show = true;
-    if(filter === 'hot' && hot) show = true;
+  applyFilter(f);
+}
+function applyFilter(f){
+  document.querySelectorAll('#pipeline-tbody tr').forEach(row=>{
+    if(f==='all'){row.style.display='';return;}
+    const show = (f==='nurturing'&&row.dataset.state==='ai_nurturing')
+      ||(f==='booked'&&row.dataset.booked==='y')
+      ||(f==='hot'&&row.dataset.hot==='y');
     row.style.display = show ? '' : 'none';
   });
 }
 
-function filterLeads(state, el) {
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  el.classList.add('active');
-  showPage('pipeline', null);
-  document.querySelectorAll('.nav-item')[1].classList.add('active');
-  // Apply filter to pipeline table
-  setTimeout(() => {
-    const map = {all:'all', ai_nurturing:'nurturing', handed_over:'booked'};
-    const btns = document.querySelectorAll('.filter-btn');
-    btns.forEach(b => b.classList.remove('active'));
-    const key = map[state] || 'all';
-    const btn = Array.from(btns).find(b => b.onclick && b.onclick.toString().includes("'"+key+"'"));
-    if(btn) { btn.classList.add('active'); filterTable(btn, key); }
-    else { if(btns[0]) { btns[0].classList.add('active'); filterTable(btns[0],'all'); } }
-  }, 50);
-}
+// ── Chat ──────────────────────────────────────────────────────────────────────
+function openChat(phone){
+  activePhone = phone;
+  const conv = convData[phone];
+  if (!conv) return;
 
-// Countdown timer
-function startCountdown() {
-  refreshTimer = 30;
-  const el = document.getElementById('countdown');
-  const iv = setInterval(() => {
-    refreshTimer--;
-    if(el) el.textContent = refreshTimer;
-    if(refreshTimer <= 0) { clearInterval(iv); location.reload(); }
-  }, 1000);
-}
+  document.querySelectorAll('.ll-item').forEach(e=>e.classList.remove('active'));
+  const li = document.getElementById('li-'+phone);
+  if (li) li.classList.add('active');
 
-// Set last refresh time
-(function(){
-  const el = document.getElementById('lastRefresh');
-  if(el) {
-    const now = new Date();
-    el.textContent = 'Updated ' + now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  document.getElementById('no-chat').style.display = 'none';
+  const wrap = document.getElementById('chat-active');
+  wrap.style.display = 'flex';
+
+  // Header
+  document.getElementById('c-av').textContent = (conv.name||phone)[0].toUpperCase();
+  document.getElementById('c-name').textContent = conv.name || ('Lead +'+phone);
+  document.getElementById('c-sub').textContent = '+'+phone+' · '+(conv.language||'').replace(/^\w/,c=>c.toUpperCase())+' · '+(conv.history||[]).length+' messages';
+
+  const badges = document.getElementById('c-badges');
+  badges.innerHTML = '';
+  if (isHot(conv)) badges.innerHTML += '<span class="badge b-red">HOT</span>';
+  badges.innerHTML += statusBadge(conv);
+  if (conv.budget) badges.innerHTML += `<span class="badge b-gold">${conv.budget.replace(' OMR','')} OMR</span>`;
+
+  // Detail strip
+  const ds = document.getElementById('c-details');
+  ds.innerHTML = [
+    conv.name   ? `<div class="ds-item"><div class="ds-label">Name</div><div class="ds-val">${esc(conv.name)}</div></div>` : '',
+    conv.budget ? `<div class="ds-item"><div class="ds-label">Budget</div><div class="ds-val">${esc(conv.budget)}</div></div>` : '',
+    conv.property_type ? `<div class="ds-item"><div class="ds-label">Property</div><div class="ds-val">${cap(conv.property_type)}</div></div>` : '',
+    conv.timeline ? `<div class="ds-item"><div class="ds-label">Timeline</div><div class="ds-val">${esc(conv.timeline)}</div></div>` : '',
+    `<div class="ds-item"><div class="ds-label">Source</div><div class="ds-val">${conv.source==='web_form'?'Web Form':'WhatsApp'}</div></div>`,
+    `<div class="ds-item"><div class="ds-label">Lang</div><div class="ds-val">${cap(conv.language)}</div></div>`,
+  ].join('');
+
+  // Messages
+  const msgs = document.getElementById('c-msgs');
+  msgs.innerHTML = '';
+  const hist = conv.history || [];
+  if (!hist.length) {
+    msgs.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:2rem">No messages yet.</div>';
+  } else {
+    hist.forEach(m => {
+      const roleLabel = m.role==='user' ? 'Lead' : m.role==='bot' ? 'PropertyIQ Bot' : 'Agent';
+      const div = document.createElement('div');
+      div.className = 'msg '+m.role;
+      div.innerHTML = `<div class="msg-role">${roleLabel}</div><div class="msg-bubble">${esc(m.text)}</div><div class="msg-time">${m.time}</div>`;
+      msgs.appendChild(div);
+    });
+    setTimeout(()=>{msgs.scrollTop=msgs.scrollHeight;},30);
   }
-  startCountdown();
+
+  document.getElementById('reply-input').placeholder = conv.name ? `Message ${conv.name}…` : 'Type your message…';
+}
+
+function handleEnter(e){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}
+}
+
+function sendMsg(){
+  if (!activePhone) return;
+  const input = document.getElementById('reply-input');
+  const btn   = document.getElementById('btn-send');
+  const ok    = document.getElementById('send-ok');
+  const msg   = input.value.trim();
+  if (!msg) return;
+
+  btn.disabled = true; btn.textContent = 'Sending…';
+
+  const fd = new FormData();
+  fd.append('phone', activePhone);
+  fd.append('message', msg);
+  fd.append('key', DASHBOARD_KEY);
+
+  fetch('/agent/send', {method:'POST', body:fd})
+    .then(r=>r.json())
+    .then(data=>{
+      if (data.success){
+        ok.style.display='block'; setTimeout(()=>{ok.style.display='none';},3000);
+        input.value = '';
+        const msgs = document.getElementById('c-msgs');
+        const now = new Date();
+        const t = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+        const div = document.createElement('div');
+        div.className = 'msg agent';
+        div.innerHTML = `<div class="msg-role">Agent</div><div class="msg-bubble">${esc(msg)}</div><div class="msg-time">${t}</div>`;
+        msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+        if (!convData[activePhone].history) convData[activePhone].history=[];
+        convData[activePhone].history.push({role:'agent',text:msg,time:t});
+      } else { alert('Failed to send. Check your WhatsApp connection.'); }
+    })
+    .catch(()=>alert('Network error. Try again.'))
+    .finally(()=>{btn.disabled=false;btn.textContent='Send';});
+}
+
+// ── Countdown + last refresh ──────────────────────────────────────────────────
+(function(){
+  const now = new Date();
+  const el = document.getElementById('last-refresh');
+  if (el) el.textContent = 'Updated '+now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+
+  let t = 30;
+  const cd = document.getElementById('countdown');
+  const iv = setInterval(()=>{ t--; if(cd)cd.textContent=t; if(t<=0){clearInterval(iv);location.reload();} }, 1000);
 })();
 </script>
 </body>
