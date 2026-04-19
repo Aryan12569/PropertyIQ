@@ -91,15 +91,12 @@ button:active{transform:scale(0.99)}
   text-align:center;font-size:11px;
   color:var(--muted);margin-top:1rem;line-height:1.6;
 }
-
-/* ── Phone Picker ── */
 .phone-row{display:flex;gap:8px;align-items:flex-start}
-.phone-row .phone-input-wrap{flex:1}
-.phone-row .phone-input-wrap input{width:100%}
-
+.phone-input-wrap{flex:1}
+.phone-input-wrap input{width:100%}
 .cc-wrapper{
   position:relative;
-  width:140px;
+  width:145px;
   flex-shrink:0;
 }
 .cc-trigger{
@@ -122,12 +119,11 @@ button:active{transform:scale(0.99)}
   color:var(--gold-dark);transition:transform .2s;flex-shrink:0;
 }
 .cc-trigger.open .cc-arrow{transform:rotate(180deg)}
-
 .cc-dropdown{
   position:absolute;
   top:calc(100% + 4px);
   left:0;
-  width:280px;
+  width:290px;
   background:#fff;
   border:1px solid var(--border);
   border-radius:4px;
@@ -138,7 +134,6 @@ button:active{transform:scale(0.99)}
   max-height:300px;
 }
 .cc-dropdown.open{display:flex}
-
 .cc-search-wrap{
   padding:10px 12px;
   border-bottom:1px solid var(--border);
@@ -151,18 +146,12 @@ button:active{transform:scale(0.99)}
   background:#fafaf8;
 }
 .cc-search-wrap input:focus{border-color:var(--gold)}
-
-.cc-list{
-  overflow-y:auto;
-  flex:1;
-}
+.cc-list{overflow-y:auto;flex:1}
 .cc-item{
   display:flex;align-items:center;gap:10px;
   padding:10px 14px;
-  cursor:pointer;
-  font-size:13px;
-  color:var(--ink);
-  transition:background .1s;
+  cursor:pointer;font-size:13px;
+  color:var(--ink);transition:background .1s;
   border-bottom:1px solid rgba(232,213,163,0.3);
 }
 .cc-item:hover{background:#fdf8ec}
@@ -170,8 +159,6 @@ button:active{transform:scale(0.99)}
 .cc-item-flag{font-size:18px;flex-shrink:0}
 .cc-item-name{flex:1;color:var(--ink)}
 .cc-item-code{color:var(--muted);font-size:12px;flex-shrink:0}
-.cc-item.hidden{display:none}
-
 @media(max-width:480px){
   .row{grid-template-columns:1fr}
   .phone-row{flex-direction:column}
@@ -209,7 +196,7 @@ button:active{transform:scale(0.99)}
                 <input
                   type="text"
                   id="ccSearch"
-                  placeholder="Search country or code..."
+                  placeholder="Search country or dial code..."
                   autocomplete="off"
                 >
               </div>
@@ -220,7 +207,7 @@ button:active{transform:scale(0.99)}
             <input
               type="tel"
               id="phoneNumber"
-              placeholder="91234567"
+              placeholder="XXXX XXXX"
               required
             >
           </div>
@@ -279,95 +266,100 @@ button:active{transform:scale(0.99)}
 
 <script>
 const COUNTRIES = [
-  {flag:"🇴🇲",name:"Oman",code:"+968"},
-  {flag:"🇦🇪",name:"United Arab Emirates",code:"+971"},
-  {flag:"🇸🇦",name:"Saudi Arabia",code:"+966"},
-  {flag:"🇶🇦",name:"Qatar",code:"+974"},
-  {flag:"🇰🇼",name:"Kuwait",code:"+965"},
-  {flag:"🇧🇭",name:"Bahrain",code:"+973"},
-  {flag:"🇾🇪",name:"Yemen",code:"+967"},
-  {flag:"🇯🇴",name:"Jordan",code:"+962"},
-  {flag:"🇱🇧",name:"Lebanon",code:"+961"},
-  {flag:"🇮🇶",name:"Iraq",code:"+964"},
-  {flag:"🇸🇾",name:"Syria",code:"+963"},
-  {flag:"🇵🇸",name:"Palestine",code:"+970"},
-  {flag:"🇪🇬",name:"Egypt",code:"+20"},
-  {flag:"🇲🇦",name:"Morocco",code:"+212"},
-  {flag:"🇩🇿",name:"Algeria",code:"+213"},
-  {flag:"🇹🇳",name:"Tunisia",code:"+216"},
-  {flag:"🇱🇾",name:"Libya",code:"+218"},
-  {flag:"🇸🇩",name:"Sudan",code:"+249"},
-  {flag:"🇸🇴",name:"Somalia",code:"+252"},
-  {flag:"🇮🇳",name:"India",code:"+91"},
-  {flag:"🇵🇰",name:"Pakistan",code:"+92"},
-  {flag:"🇧🇩",name:"Bangladesh",code:"+880"},
-  {flag:"🇱🇰",name:"Sri Lanka",code:"+94"},
-  {flag:"🇳🇵",name:"Nepal",code:"+977"},
-  {flag:"🇵🇭",name:"Philippines",code:"+63"},
-  {flag:"🇮🇩",name:"Indonesia",code:"+62"},
-  {flag:"🇲🇾",name:"Malaysia",code:"+60"},
-  {flag:"🇸🇬",name:"Singapore",code:"+65"},
-  {flag:"🇹🇭",name:"Thailand",code:"+66"},
-  {flag:"🇻🇳",name:"Vietnam",code:"+84"},
-  {flag:"🇨🇳",name:"China",code:"+86"},
-  {flag:"🇯🇵",name:"Japan",code:"+81"},
-  {flag:"🇰🇷",name:"South Korea",code:"+82"},
-  {flag:"🇹🇷",name:"Turkey",code:"+90"},
-  {flag:"🇮🇷",name:"Iran",code:"+98"},
-  {flag:"🇦🇫",name:"Afghanistan",code:"+93"},
-  {flag:"🇬🇧",name:"United Kingdom",code:"+44"},
-  {flag:"🇺🇸",name:"United States",code:"+1"},
-  {flag:"🇨🇦",name:"Canada",code:"+1"},
-  {flag:"🇦🇺",name:"Australia",code:"+61"},
-  {flag:"🇳🇿",name:"New Zealand",code:"+64"},
-  {flag:"🇩🇪",name:"Germany",code:"+49"},
-  {flag:"🇫🇷",name:"France",code:"+33"},
-  {flag:"🇮🇹",name:"Italy",code:"+39"},
-  {flag:"🇪🇸",name:"Spain",code:"+34"},
-  {flag:"🇵🇹",name:"Portugal",code:"+351"},
-  {flag:"🇳🇱",name:"Netherlands",code:"+31"},
-  {flag:"🇧🇪",name:"Belgium",code:"+32"},
-  {flag:"🇨🇭",name:"Switzerland",code:"+41"},
-  {flag:"🇸🇪",name:"Sweden",code:"+46"},
-  {flag:"🇳🇴",name:"Norway",code:"+47"},
-  {flag:"🇩🇰",name:"Denmark",code:"+45"},
-  {flag:"🇫🇮",name:"Finland",code:"+358"},
-  {flag:"🇵🇱",name:"Poland",code:"+48"},
-  {flag:"🇷🇺",name:"Russia",code:"+7"},
-  {flag:"🇺🇦",name:"Ukraine",code:"+380"},
-  {flag:"🇬🇷",name:"Greece",code:"+30"},
-  {flag:"🇷🇴",name:"Romania",code:"+40"},
-  {flag:"🇨🇿",name:"Czech Republic",code:"+420"},
-  {flag:"🇭🇺",name:"Hungary",code:"+36"},
-  {flag:"🇧🇷",name:"Brazil",code:"+55"},
-  {flag:"🇲🇽",name:"Mexico",code:"+52"},
-  {flag:"🇦🇷",name:"Argentina",code:"+54"},
-  {flag:"🇨🇴",name:"Colombia",code:"+57"},
-  {flag:"🇨🇱",name:"Chile",code:"+56"},
-  {flag:"🇳🇬",name:"Nigeria",code:"+234"},
-  {flag:"🇰🇪",name:"Kenya",code:"+254"},
-  {flag:"🇿🇦",name:"South Africa",code:"+27"},
-  {flag:"🇬🇭",name:"Ghana",code:"+233"},
-  {flag:"🇪🇹",name:"Ethiopia",code:"+251"},
-  {flag:"🇹🇿",name:"Tanzania",code:"+255"},
-  {flag:"🇺🇬",name:"Uganda",code:"+256"},
-  {flag:"🇷🇼",name:"Rwanda",code:"+250"},
-  {flag:"🇸🇳",name:"Senegal",code:"+221"},
-  {flag:"🇨🇮",name:"Ivory Coast",code:"+225"},
-  {flag:"🇿🇼",name:"Zimbabwe",code:"+263"},
-  {flag:"🇿🇲",name:"Zambia",code:"+260"},
+  {flag:"🇴🇲",name:"Oman",             code:"+968", placeholder:"XXXX XXXX"},
+  {flag:"🇦🇪",name:"United Arab Emirates", code:"+971", placeholder:"XX XXX XXXX"},
+  {flag:"🇸🇦",name:"Saudi Arabia",      code:"+966", placeholder:"XX XXX XXXX"},
+  {flag:"🇶🇦",name:"Qatar",             code:"+974", placeholder:"XXXX XXXX"},
+  {flag:"🇰🇼",name:"Kuwait",            code:"+965", placeholder:"XXXX XXXX"},
+  {flag:"🇧🇭",name:"Bahrain",           code:"+973", placeholder:"XXXX XXXX"},
+  {flag:"🇾🇪",name:"Yemen",             code:"+967", placeholder:"XXX XXX XXX"},
+  {flag:"🇯🇴",name:"Jordan",            code:"+962", placeholder:"X XXXX XXXX"},
+  {flag:"🇱🇧",name:"Lebanon",           code:"+961", placeholder:"XX XXX XXX"},
+  {flag:"🇮🇶",name:"Iraq",              code:"+964", placeholder:"XXX XXX XXXX"},
+  {flag:"🇸🇾",name:"Syria",             code:"+963", placeholder:"XXX XXX XXX"},
+  {flag:"🇵🇸",name:"Palestine",         code:"+970", placeholder:"XXX XXX XXX"},
+  {flag:"🇪🇬",name:"Egypt",             code:"+20",  placeholder:"XXX XXX XXXX"},
+  {flag:"🇲🇦",name:"Morocco",           code:"+212", placeholder:"XXX XXX XXX"},
+  {flag:"🇩🇿",name:"Algeria",           code:"+213", placeholder:"XXX XXX XXX"},
+  {flag:"🇹🇳",name:"Tunisia",           code:"+216", placeholder:"XX XXX XXX"},
+  {flag:"🇱🇾",name:"Libya",             code:"+218", placeholder:"XX XXX XXXX"},
+  {flag:"🇸🇩",name:"Sudan",             code:"+249", placeholder:"XX XXX XXXX"},
+  {flag:"🇸🇴",name:"Somalia",           code:"+252", placeholder:"XX XXX XXX"},
+  {flag:"🇮🇳",name:"India",             code:"+91",  placeholder:"XXXXX XXXXX"},
+  {flag:"🇵🇰",name:"Pakistan",          code:"+92",  placeholder:"XXX XXX XXXX"},
+  {flag:"🇧🇩",name:"Bangladesh",        code:"+880", placeholder:"XXXX XXX XXX"},
+  {flag:"🇱🇰",name:"Sri Lanka",         code:"+94",  placeholder:"XX XXX XXXX"},
+  {flag:"🇳🇵",name:"Nepal",             code:"+977", placeholder:"XX XXX XXXX"},
+  {flag:"🇵🇭",name:"Philippines",       code:"+63",  placeholder:"XXX XXX XXXX"},
+  {flag:"🇮🇩",name:"Indonesia",         code:"+62",  placeholder:"XXX XXXX XXXX"},
+  {flag:"🇲🇾",name:"Malaysia",          code:"+60",  placeholder:"XX XXXX XXXX"},
+  {flag:"🇸🇬",name:"Singapore",         code:"+65",  placeholder:"XXXX XXXX"},
+  {flag:"🇹🇭",name:"Thailand",          code:"+66",  placeholder:"XX XXX XXXX"},
+  {flag:"🇻🇳",name:"Vietnam",           code:"+84",  placeholder:"XXX XXX XXX"},
+  {flag:"🇨🇳",name:"China",             code:"+86",  placeholder:"XXX XXXX XXXX"},
+  {flag:"🇯🇵",name:"Japan",             code:"+81",  placeholder:"XX XXXX XXXX"},
+  {flag:"🇰🇷",name:"South Korea",       code:"+82",  placeholder:"XX XXXX XXXX"},
+  {flag:"🇹🇷",name:"Turkey",            code:"+90",  placeholder:"XXX XXX XXXX"},
+  {flag:"🇮🇷",name:"Iran",              code:"+98",  placeholder:"XXX XXX XXXX"},
+  {flag:"🇦🇫",name:"Afghanistan",       code:"+93",  placeholder:"XX XXX XXXX"},
+  {flag:"🇬🇧",name:"United Kingdom",    code:"+44",  placeholder:"XXXX XXX XXX"},
+  {flag:"🇺🇸",name:"United States",     code:"+1",   placeholder:"XXX XXX XXXX"},
+  {flag:"🇨🇦",name:"Canada",            code:"+1",   placeholder:"XXX XXX XXXX"},
+  {flag:"🇦🇺",name:"Australia",         code:"+61",  placeholder:"XXX XXX XXX"},
+  {flag:"🇳🇿",name:"New Zealand",       code:"+64",  placeholder:"XX XXX XXXX"},
+  {flag:"🇩🇪",name:"Germany",           code:"+49",  placeholder:"XXX XXXXXXX"},
+  {flag:"🇫🇷",name:"France",            code:"+33",  placeholder:"X XX XX XX XX"},
+  {flag:"🇮🇹",name:"Italy",             code:"+39",  placeholder:"XXX XXX XXXX"},
+  {flag:"🇪🇸",name:"Spain",             code:"+34",  placeholder:"XXX XXX XXX"},
+  {flag:"🇵🇹",name:"Portugal",          code:"+351", placeholder:"XXX XXX XXX"},
+  {flag:"🇳🇱",name:"Netherlands",       code:"+31",  placeholder:"X XX XX XX XX"},
+  {flag:"🇧🇪",name:"Belgium",           code:"+32",  placeholder:"XXX XX XX XX"},
+  {flag:"🇨🇭",name:"Switzerland",       code:"+41",  placeholder:"XX XXX XX XX"},
+  {flag:"🇸🇪",name:"Sweden",            code:"+46",  placeholder:"XX XXX XXXX"},
+  {flag:"🇳🇴",name:"Norway",            code:"+47",  placeholder:"XXX XX XXX"},
+  {flag:"🇩🇰",name:"Denmark",           code:"+45",  placeholder:"XX XX XX XX"},
+  {flag:"🇫🇮",name:"Finland",           code:"+358", placeholder:"XX XXX XXXX"},
+  {flag:"🇵🇱",name:"Poland",            code:"+48",  placeholder:"XXX XXX XXX"},
+  {flag:"🇷🇺",name:"Russia",            code:"+7",   placeholder:"XXX XXX XXXX"},
+  {flag:"🇺🇦",name:"Ukraine",           code:"+380", placeholder:"XX XXX XXXX"},
+  {flag:"🇬🇷",name:"Greece",            code:"+30",  placeholder:"XXX XXX XXXX"},
+  {flag:"🇷🇴",name:"Romania",           code:"+40",  placeholder:"XXX XXX XXX"},
+  {flag:"🇨🇿",name:"Czech Republic",    code:"+420", placeholder:"XXX XXX XXX"},
+  {flag:"🇭🇺",name:"Hungary",           code:"+36",  placeholder:"XX XXX XXXX"},
+  {flag:"🇧🇷",name:"Brazil",            code:"+55",  placeholder:"XX XXXXX XXXX"},
+  {flag:"🇲🇽",name:"Mexico",            code:"+52",  placeholder:"XXX XXX XXXX"},
+  {flag:"🇦🇷",name:"Argentina",         code:"+54",  placeholder:"XX XXXX XXXX"},
+  {flag:"🇨🇴",name:"Colombia",          code:"+57",  placeholder:"XXX XXX XXXX"},
+  {flag:"🇨🇱",name:"Chile",             code:"+56",  placeholder:"X XXXX XXXX"},
+  {flag:"🇳🇬",name:"Nigeria",           code:"+234", placeholder:"XXX XXX XXXX"},
+  {flag:"🇰🇪",name:"Kenya",             code:"+254", placeholder:"XXX XXX XXX"},
+  {flag:"🇿🇦",name:"South Africa",      code:"+27",  placeholder:"XX XXX XXXX"},
+  {flag:"🇬🇭",name:"Ghana",             code:"+233", placeholder:"XX XXX XXXX"},
+  {flag:"🇪🇹",name:"Ethiopia",          code:"+251", placeholder:"XX XXX XXXX"},
+  {flag:"🇹🇿",name:"Tanzania",          code:"+255", placeholder:"XXX XXX XXX"},
+  {flag:"🇺🇬",name:"Uganda",            code:"+256", placeholder:"XXX XXX XXX"},
+  {flag:"🇷🇼",name:"Rwanda",            code:"+250", placeholder:"XXX XXX XXX"},
+  {flag:"🇸🇳",name:"Senegal",           code:"+221", placeholder:"XX XXX XXXX"},
+  {flag:"🇨🇮",name:"Ivory Coast",       code:"+225", placeholder:"XX XX XX XX XX"},
+  {flag:"🇿🇼",name:"Zimbabwe",          code:"+263", placeholder:"XX XXX XXXX"},
+  {flag:"🇿🇲",name:"Zambia",            code:"+260", placeholder:"XX XXX XXXX"},
 ];
 
 let selectedCountry = COUNTRIES[0];
 let isOpen = false;
 
-const ccTrigger   = document.getElementById("ccTrigger");
-const ccDropdown  = document.getElementById("ccDropdown");
-const ccSearch    = document.getElementById("ccSearch");
-const ccList      = document.getElementById("ccList");
-const ccFlag      = document.getElementById("ccFlag");
-const ccCode      = document.getElementById("ccCode");
-const ccWrapper   = document.getElementById("ccWrapper");
+const ccTrigger  = document.getElementById("ccTrigger");
+const ccDropdown = document.getElementById("ccDropdown");
+const ccSearch   = document.getElementById("ccSearch");
+const ccList     = document.getElementById("ccList");
+const ccFlag     = document.getElementById("ccFlag");
+const ccCode     = document.getElementById("ccCode");
+const ccWrapper  = document.getElementById("ccWrapper");
+const phoneInput = document.getElementById("phoneNumber");
+
+function updatePlaceholder(country){
+  phoneInput.placeholder = country.placeholder;
+}
 
 function buildList(filter){
   ccList.innerHTML = "";
@@ -396,6 +388,8 @@ function selectCountry(c){
   selectedCountry = c;
   ccFlag.textContent = c.flag;
   ccCode.textContent = c.code;
+  updatePlaceholder(c);
+  phoneInput.value = "";
   closeDropdown();
 }
 
@@ -433,18 +427,17 @@ document.addEventListener("click", function(e){
 });
 
 document.getElementById("mainForm").addEventListener("submit", function(e){
-  var raw    = document.getElementById("phoneNumber").value.trim();
-  var clean  = raw.replace(/^0+/, "").replace(/\s/g,"").replace(/-/g,"");
-  var full   = selectedCountry.code + clean;
-  document.getElementById("phoneHidden").value = full;
-
+  var raw   = phoneInput.value.trim();
+  var clean = raw.replace(/\s/g,"").replace(/-/g,"").replace(/^0+/,"");
   if(!clean){
     e.preventDefault();
-    document.getElementById("phoneNumber").focus();
+    phoneInput.focus();
     return;
   }
+  document.getElementById("phoneHidden").value = selectedCountry.code + clean;
 });
 
+updatePlaceholder(selectedCountry);
 buildList("");
 </script>
 </body>
