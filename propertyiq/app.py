@@ -253,11 +253,7 @@ def submit():
     hot = is_hot_lead(budget)
 
     # 3. Send WhatsApp to lead
-    lead_wa_message = (
-        f"Hello {name.split()[0]},\n\n"
-        f"{ai_response}"
-    )
-    send_whatsapp(phone, lead_wa_message)
+   send_whatsapp(phone, ai_response)
 
     # 4. Send agent alert
     send_agent_alert(name, budget, prop_type, language, phone, email, message, ai_response)
