@@ -383,11 +383,11 @@ def generate_brochures():
 def process_message(raw_phone, incoming_text):
     phone = normalize_phone(raw_phone)
     if not phone:
-        print(f"Bad phone: '{raw_phone}'"); return
-
-    print(f"[MSG] {phone} | state={get_conversation(phone)['state']} | '{incoming_text[:50]}'")
+        print(f"[PROCESS] Bad phone: '{raw_phone}'"); return
 
     conv = get_conversation(phone)
+    print(f"[PROCESS] phone=+{phone} state={conv['state']} text='{incoming_text[:60]}'")
+    print(f"[PROCESS] GROQ_KEY={'SET' if GROQ_API_KEY else 'MISSING!'} WA_ID={'SET' if WA_PHONE_NUMBER_ID else 'MISSING!'} WA_TOKEN={'SET' if WA_ACCESS_TOKEN else 'MISSING!'}") 
 
     # Detect Arabic on early messages
     if conv["state"] in ["new", "asked_name"] and detect_language(incoming_text) == "arabic":
@@ -557,37 +557,63 @@ def webhook_verify():
 
 @app.route("/webhook", methods=["POST"])
 def webhook_receive():
-    data = request.get_json(silent=True)
-    if not data:
+    # ── Log the raw payload so we can see EXACTLY what Meta sends ──────────
+    raw_body = request.get_data(as_text=True)
+    print(f"WEBHOOK RAW BODY: {raw_body[:1000]}")
+    print(f"WEBHOOK HEADERS: Content-Type={request.content_type}")
+
+    # Meta sometimes omits Content-Type: application/json — force-parse
+    try:
+        data = json.loads(raw_body) if raw_body else None
+    except Exception as parse_err:
+        print(f"WEBHOOK JSON PARSE ERROR: {parse_err}")
         return "OK", 200
+
+    if not data:
+        print("WEBHOOK: empty body, ignoring")
+        return "OK", 200
+
+    print(f"WEBHOOK PARSED: keys={list(data.keys())}")
+
     try:
         for entry in data.get("entry", []):
             for change in entry.get("changes", []):
                 value = change.get("value", {})
+                print(f"WEBHOOK CHANGE VALUE keys: {list(value.keys())}")
 
-                # ── Skip delivery/read status updates entirely ──────────────
+                # Skip pure status updates (delivery/read receipts)
                 if "statuses" in value and "messages" not in value:
+                    print("WEBHOOK: skipping status-only update")
                     continue
 
-                for msg in value.get("messages", []):
-                    # Only handle text messages
-                    if msg.get("type") != "text":
-                        print(f"Skipping non-text message type: {msg.get('type')}")
+                messages_in = value.get("messages", [])
+                print(f"WEBHOOK: {len(messages_in)} message(s) in payload")
+
+                for msg in messages_in:
+                    msg_type = msg.get("type")
+                    print(f"WEBHOOK MSG: type={msg_type} from={msg.get('from')} id={msg.get('id')}")
+
+                    if msg_type != "text":
+                        print(f"WEBHOOK: skipping non-text type '{msg_type}'")
                         continue
 
                     raw_phone = msg.get("from", "").strip()
-                    text = msg.get("text", {}).get("body", "").strip()
+                    text = (msg.get("text") or {}).get("body", "").strip()
 
-                    if not raw_phone or not text:
-                        print(f"Skipping message with empty phone or text")
+                    if not raw_phone:
+                        print("WEBHOOK: missing phone, skipping")
+                        continue
+                    if not text:
+                        print("WEBHOOK: empty text body, skipping")
                         continue
 
-                    print(f"Webhook received: from={raw_phone} text='{text[:60]}'")
+                    print(f"WEBHOOK OK: from=+{raw_phone} text='{text[:80]}'")
                     process_message(raw_phone, text)
 
     except Exception as e:
-        print(f"Webhook ERROR: {e}")
+        print(f"WEBHOOK PROCESSING ERROR: {e}")
         import traceback; traceback.print_exc()
+
     return "OK", 200
 
 @app.route("/agent")
@@ -622,6 +648,27 @@ def thank_you():
 @app.route("/health")
 def health():
     return jsonify({"status":"live","conversations":len(conversations),"booked":sum(1 for c in conversations.values() if c.get("booking_confirmed")),"nurturing":sum(1 for c in conversations.values() if c.get("state")=="ai_nurturing")}), 200
+
+@app.route("/debug")
+def debug():
+    """Quick sanity-check page — visit in browser to see live config state."""
+    if request.args.get("key", "") != AGENT_DASHBOARD_KEY:
+        return "Access denied", 403
+    lines = [
+        f"GROQ_API_KEY: {'✅ SET (' + GROQ_API_KEY[:8] + '...)' if GROQ_API_KEY else '❌ MISSING'}",
+        f"WA_PHONE_NUMBER_ID: {'✅ ' + WA_PHONE_NUMBER_ID if WA_PHONE_NUMBER_ID else '❌ MISSING'}",
+        f"WA_ACCESS_TOKEN: {'✅ SET (' + WA_ACCESS_TOKEN[:12] + '...)' if WA_ACCESS_TOKEN else '❌ MISSING'}",
+        f"AGENT_WHATSAPP: {'✅ ' + AGENT_WHATSAPP if AGENT_WHATSAPP else '⚠️ not set (agent alerts disabled)'}",
+        f"VERIFY_TOKEN: {VERIFY_TOKEN}",
+        f"RENDER_URL: {RENDER_URL}",
+        "",
+        f"Active conversations: {len(conversations)}",
+        "",
+        "--- Conversations ---",
+    ]
+    for phone, conv in conversations.items():
+        lines.append(f"+{phone} | {conv.get('name','?')} | state={conv.get('state')} | msgs={len(conv.get('history',[]))}")
+    return "<pre style='font-family:monospace;padding:2rem'>" + "\n".join(lines) + "</pre>"
 
 @app.route("/api/conversations")
 def api_conversations():
