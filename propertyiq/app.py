@@ -14,30 +14,30 @@ app = Flask(__name__)
 GROQ_API_KEY         = os.getenv("GROQ_API_KEY")
 WA_PHONE_NUMBER_ID   = os.getenv("WA_PHONE_NUMBER_ID")
 WA_ACCESS_TOKEN      = os.getenv("WA_ACCESS_TOKEN")
-AGENT_WHATSAPP       = os.getenv("AGENT_WHATSAPP")        # e.g. 96891234567
+AGENT_WHATSAPP       = os.getenv("AGENT_WHATSAPP")
 NOTION_TOKEN         = os.getenv("NOTION_TOKEN")
 NOTION_DB_ID         = os.getenv("NOTION_DB_ID")
 SPREADSHEET_ID       = os.getenv("SPREADSHEET_ID")
-GOOGLE_CREDS_JSON    = os.getenv("GOOGLE_CREDS_JSON")     # full JSON string
+GOOGLE_CREDS_JSON    = os.getenv("GOOGLE_CREDS_JSON")
 
 PROPERTY_LIST = """
-PROPERTY 1 | TYPE: 2BR Apartment | PROJECT: Muscat Bay | PRICE: 85,000 OMR
+PROPERTY 1 | TYPE: 2BR Apartment | PROJECT: Muscat Bay | PRICE: 85000 OMR
 FEATURES: Direct sea view, private balcony, fully fitted kitchen, 2 parking, pool and gym
 STATUS: Available | HANDOVER: Q2 2025
 
-PROPERTY 2 | TYPE: 3BR Apartment | PROJECT: Muscat Bay | PRICE: 130,000 OMR
+PROPERTY 2 | TYPE: 3BR Apartment | PROJECT: Muscat Bay | PRICE: 130000 OMR
 FEATURES: Panoramic sea and mountain view, maid room, smart home, 2 parking, rooftop pool
 STATUS: Available | HANDOVER: Q2 2025
 
-PROPERTY 3 | TYPE: 2BR Apartment | PROJECT: Al Mouj | PRICE: 95,000 OMR
+PROPERTY 3 | TYPE: 2BR Apartment | PROJECT: Al Mouj | PRICE: 95000 OMR
 FEATURES: Golf course view, Italian marble kitchen, beach club access
 STATUS: Last 2 units remaining | HANDOVER: Ready now
 
-PROPERTY 4 | TYPE: 4BR Villa | PROJECT: Al Mouj | PRICE: 285,000 OMR
+PROPERTY 4 | TYPE: 4BR Villa | PROJECT: Al Mouj | PRICE: 285000 OMR
 FEATURES: Private pool, 3-car garage, smart home, landscaped garden, direct beach access
 STATUS: 1 unit only | HANDOVER: Ready now
 
-PROPERTY 5 | TYPE: 1BR Studio | PROJECT: The Wave | PRICE: 55,000 OMR
+PROPERTY 5 | TYPE: 1BR Studio | PROJECT: The Wave | PRICE: 55000 OMR
 FEATURES: Marina view, full furniture package option, short-term rental permit available
 STATUS: Available | HANDOVER: Q1 2025
 """
@@ -53,13 +53,13 @@ RULES:
 1. Write ENTIRELY in the language specified in LEAD LANGUAGE. Do not mix languages.
 2. If language is Arabic, write in warm Gulf Arabic Khaleeji dialect only. Never use Modern Standard Arabic.
 3. Keep response under 160 words.
-4. Greet the lead by first name warmly.
+4. Greet the lead by their first name warmly at the very start. Do this ONCE and ONCE only. Do not repeat the greeting anywhere else in the message.
 5. Recommend 1 to 2 properties that match their budget and property type.
 6. For each property mention one specific standout feature.
 7. Invite them to book a private viewing with Ahmed.
 8. Never mention competitors or invent property details.
 9. Format as a WhatsApp message — natural paragraphs, no bullet points, no HTML.
-10. End with exactly: Ahmed Al-Balushi | Al Noor Properties | +96891234567
+10. End with exactly this on a new line: Ahmed Al-Balushi | Al Noor Properties | +96891234567
 """
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -97,8 +97,6 @@ def generate_ai_response(name, budget, prop_type, language, message):
 
 
 def send_whatsapp(to_number, message_text):
-    """Send WhatsApp message via Meta Cloud API."""
-    # Strip + and spaces from number
     clean_number = to_number.replace("+", "").replace(" ", "").replace("-", "")
     url = f"https://graph.facebook.com/v19.0/{WA_PHONE_NUMBER_ID}/messages"
     headers = {
@@ -122,11 +120,12 @@ def send_whatsapp(to_number, message_text):
         return True
     except Exception as e:
         print(f"WhatsApp error to {clean_number}: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"WhatsApp response: {e.response.text}")
         return False
 
 
 def send_agent_alert(lead_name, budget, prop_type, language, phone, email, message, ai_response):
-    """Send agent alert to the registered agent WhatsApp number."""
     alert = (
         f"🔔 NEW LEAD — PropertyIQ\n\n"
         f"Name: {lead_name}\n"
@@ -143,7 +142,6 @@ def send_agent_alert(lead_name, budget, prop_type, language, phone, email, messa
 
 
 def log_to_sheets(name, phone, email, budget, prop_type, language, message, ai_response, hot_lead):
-    """Log lead to Google Sheets."""
     try:
         creds_dict = json.loads(GOOGLE_CREDS_JSON)
         scopes = [
@@ -173,8 +171,8 @@ def log_to_notion(name, phone, email, budget, prop_type, language, message, ai_r
         "Notion-Version": "2022-06-28"
     }
     clean_budget = str(budget).replace(",", "")
-    clean_prop = str(prop_type).replace(",", "")
-    clean_lang = str(language).replace(" / عربي", "").replace("Arabic / عربي", "Arabic").strip()
+    clean_prop   = str(prop_type).replace(",", "")
+    clean_lang   = str(language).replace(" / عربي", "").replace("Arabic / عربي", "Arabic").strip()
     payload = {
         "parent": {"database_id": NOTION_DB_ID},
         "properties": {
@@ -221,6 +219,7 @@ def log_to_notion(name, phone, email, budget, prop_type, language, message, ai_r
         print(f"Notion error: {e}")
         print(f"Notion response: {r.text}")
 
+
 def is_hot_lead(budget):
     hot_keywords = ["130,000", "200,000", "Above"]
     return "YES" if any(k in budget for k in hot_keywords) else "NO"
@@ -252,8 +251,8 @@ def submit():
     # 2. Determine if hot lead
     hot = is_hot_lead(budget)
 
-    # 3. Send WhatsApp to lead
-   send_whatsapp(phone, ai_response)
+    # 3. Send WhatsApp to lead — AI response only, no manual greeting
+    send_whatsapp(phone, ai_response)
 
     # 4. Send agent alert
     send_agent_alert(name, budget, prop_type, language, phone, email, message, ai_response)
