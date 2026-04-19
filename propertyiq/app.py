@@ -112,11 +112,26 @@ def detect_language(text):
 
 def get_conversation(phone):
     if phone not in conversations:
-        conversations[phone] = {"state":"new","language":"english","name":None,"property_type":None,"budget":None,"timeline":None,"history":[]}
+        conversations[phone] = {
+            "state": "new",
+            "language": "english",
+            "name": None,
+            "property_type": None,
+            "budget": None,
+            "timeline": None,
+            "history": [],
+            "booking_confirmed": False,
+            "source": "whatsapp",
+            "created_at": datetime.now().isoformat(),
+        }
     return conversations[phone]
 
 def add_to_history(phone, role, text):
-    get_conversation(phone)["history"].append({"role":role,"text":text,"time":datetime.now().strftime("%H:%M")})
+    get_conversation(phone)["history"].append({
+        "role": role,
+        "text": text,
+        "time": datetime.now().strftime("%H:%M")
+    })
 
 MESSAGES = {
     "english": {
@@ -125,7 +140,7 @@ MESSAGES = {
         "ask_budget": "What is your budget range?\n\n1️⃣  Under 60,000 OMR\n2️⃣  60,000 – 90,000 OMR\n3️⃣  90,000 – 130,000 OMR\n4️⃣  130,000 – 200,000 OMR\n5️⃣  Above 200,000 OMR\n\nReply with a number.",
         "ask_timeline": "Almost done! When are you planning to make a purchase?\n\n1️⃣  Immediately\n2️⃣  Within 3 months\n3️⃣  Within 6 months\n4️⃣  Just exploring for now\n\nReply with a number.",
         "unclear": "I didn't quite catch that. Could you reply with one of the numbered options above? 😊",
-        "handover": "\n\nOur specialist Ahmed Al-Balushi will personally reach out to you shortly to arrange a private viewing at your convenience.\n\nAhmed Al-Balushi | Al Noor Properties | +968 9123 4567",
+        "booking_confirmed_agent": "\n\nExcellent! 🎉 You're all set. Our specialist *Ahmed Al-Balushi* will personally reach out to confirm your appointment and prepare everything for your visit.\n\nAhmed Al-Balushi | Al Noor Properties | +968 9123 4567",
     },
     "arabic": {
         "welcome": "أهلاً وسهلاً! مرحباً بك في عقارات النور 🏠\n\nأنا PropertyIQ، مساعدك العقاري الشخصي. راح أساعدك تلقى العقار المثالي في مسقط بأسئلة بسيطة وسريعة.\n\nممكن أعرف اسمك؟",
@@ -133,9 +148,59 @@ MESSAGES = {
         "ask_budget": "وش هي ميزانيتك تقريباً؟\n\n1️⃣  أقل من ٦٠٬٠٠٠ ريال عماني\n2️⃣  ٦٠٬٠٠٠ – ٩٠٬٠٠٠ ريال عماني\n3️⃣  ٩٠٬٠٠٠ – ١٣٠٬٠٠٠ ريال عماني\n4️⃣  ١٣٠٬٠٠٠ – ٢٠٠٬٠٠٠ ريال عماني\n5️⃣  أكثر من ٢٠٠٬٠٠٠ ريال عماني\n\nردّ برقم.",
         "ask_timeline": "آخر سؤال! متى تخطط تشتري العقار؟\n\n1️⃣  فوري\n2️⃣  خلال ٣ أشهر\n3️⃣  خلال ٦ أشهر\n4️⃣  بس أستكشف الحين\n\nردّ برقم.",
         "unclear": "ما فهمت بشكل واضح. ممكن تردّ بأحد الخيارات المرقمة أعلاه؟ 😊",
-        "handover": "\n\nمتخصصنا أحمد البلوشي راح يتواصل معك شخصياً قريباً لترتيب جولة خاصة في وقت يناسبك.\n\nأحمد البلوشي | عقارات النور | ‎+968 9123 4567",
+        "booking_confirmed_agent": "\n\nممتاز! 🎉 تم الحجز. متخصصنا *أحمد البلوشي* راح يتواصل معك شخصياً لتأكيد الموعد وتجهيز كل شيء لزيارتك.\n\nأحمد البلوشي | عقارات النور | ‎+968 9123 4567",
     }
 }
+
+# ─── AI SALES SYSTEM PROMPT ─────────────────────────────────────────────────
+
+SALES_SYSTEM_PROMPT = """You are PropertyIQ, an elite real estate sales assistant for Al Noor Properties in Muscat, Oman. You are a world-class sales professional — warm, consultative, and highly persuasive. Your goal is to get the lead to commit to a viewing appointment.
+
+AVAILABLE PROPERTIES:
+1. Muscat Bay 2BR | 85,000 OMR | Sea view, balcony, pool+gym | Q2 2025
+2. Muscat Bay 3BR | 130,000 OMR | Panoramic sea view, smart home, rooftop pool | Q2 2025
+3. Al Mouj 2BR | 95,000 OMR | Golf view, marble kitchen, beach club | LAST 2 UNITS — ready now
+4. Al Mouj 4BR Villa | 285,000 OMR | Private pool, beach access | ONLY 1 LEFT — ready now
+5. The Wave Studio | 55,000 OMR | Marina view, rental permit | Q1 2025
+
+AGENT: Ahmed Al-Balushi | +968 9123 4567
+
+YOUR SALES APPROACH:
+- Always respond in the LEAD'S LANGUAGE. Arabic leads get warm Gulf Khaleeji dialect.
+- Keep messages under 130 words — punchy, not pushy.
+- Use scarcity and urgency naturally: "only 2 units left", "this won't last the week".
+- Ask ONE closing question per message to move them toward booking.
+- Address objections confidently with facts and empathy.
+- If they express ANY interest, pivot immediately to booking: "Would you like to schedule a private viewing this week?"
+- Use their name naturally once per message.
+- Closing signals to watch for: asking about payment, asking about viewing, saying "yes", "interested", "tell me more", "how do I proceed", "when can I see it".
+- When they agree to a viewing or say they want to proceed: respond warmly confirming the booking and end your message with exactly the tag: [BOOKING_CONFIRMED]
+- Never add a sign-off paragraph — it is appended separately.
+- Format: natural WhatsApp paragraphs, no bullet points in conversational messages.
+- Be REAL. Sound human, not like a chatbot. Use light emojis sparingly.
+"""
+
+RECOMMENDATION_SYSTEM_PROMPT = """You are PropertyIQ, a premium real estate assistant for Al Noor Properties in Muscat, Oman.
+
+AVAILABLE PROPERTIES:
+PROPERTY 1 | Muscat Bay 2BR Apartment | 85000 OMR | Sea view, balcony, pool, gym | Available Q2 2025
+PROPERTY 2 | Muscat Bay 3BR Apartment | 130000 OMR | Panoramic sea view, smart home, rooftop pool | Available Q2 2025
+PROPERTY 3 | Al Mouj 2BR Apartment | 95000 OMR | Golf view, marble kitchen, beach club | Last 2 units ready now
+PROPERTY 4 | Al Mouj 4BR Villa | 285000 OMR | Private pool, 3-car garage, beach access | 1 unit ready now
+PROPERTY 5 | The Wave 1BR Studio | 55000 OMR | Marina view, rental permit | Available Q1 2025
+
+AGENT: Ahmed Al-Balushi | +968 9123 4567
+
+RULES:
+1. Write ENTIRELY in LEAD LANGUAGE. If Arabic use warm Gulf Arabic Khaleeji dialect only.
+2. Keep under 120 words.
+3. Greet by first name once only.
+4. Recommend 1 property matching budget and type with one standout feature.
+5. Mention their brochure has been sent.
+6. End with a soft question to start conversation: ask if they'd like to know more or arrange a viewing.
+7. Do NOT add sign-off — it is appended separately.
+8. Format as WhatsApp message — natural paragraphs only.
+"""
 
 def parse_property_type(text):
     t = text.lower().strip()
@@ -187,39 +252,57 @@ def select_property(budget_str, prop_type_str):
         return next((p for p in PROPERTIES if p["id"]=="am_2br"), PROPERTIES[0])
     return next((p for p in PROPERTIES if p["id"]=="mb_2br"), PROPERTIES[0])
 
-SYSTEM_PROMPT = """You are PropertyIQ, a premium real estate assistant for Al Noor Properties in Muscat, Oman.
-
-AVAILABLE PROPERTIES:
-PROPERTY 1 | Muscat Bay 2BR Apartment | 85000 OMR | Sea view, balcony, pool, gym | Available Q2 2025
-PROPERTY 2 | Muscat Bay 3BR Apartment | 130000 OMR | Panoramic sea view, smart home, rooftop pool | Available Q2 2025
-PROPERTY 3 | Al Mouj 2BR Apartment | 95000 OMR | Golf view, marble kitchen, beach club | Last 2 units ready now
-PROPERTY 4 | Al Mouj 4BR Villa | 285000 OMR | Private pool, 3-car garage, beach access | 1 unit ready now
-PROPERTY 5 | The Wave 1BR Studio | 55000 OMR | Marina view, rental permit | Available Q1 2025
-
-AGENT: Ahmed Al-Balushi | +968 9123 4567
-
-RULES:
-1. Write ENTIRELY in LEAD LANGUAGE. If Arabic use warm Gulf Arabic Khaleeji dialect only.
-2. Keep under 120 words.
-3. Greet by first name once only.
-4. Recommend 1 property matching budget and type with one standout feature.
-5. Mention their brochure has been sent.
-6. Do NOT add sign-off — it is appended separately.
-7. Format as WhatsApp message — natural paragraphs only.
-"""
-
-def generate_ai_recommendation(name, budget, prop_type, timeline, language):
+def call_groq(system_prompt, messages_payload, max_tokens=350, temperature=0.7):
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
-    user_content = f"LEAD NAME: {name}\nLEAD BUDGET: {budget}\nLEAD PROPERTY TYPE: {prop_type}\nLEAD TIMELINE: {timeline}\nLEAD LANGUAGE: {language}\n\nWrite the WhatsApp recommendation now."
-    payload = {"model":"llama-3.3-70b-versatile","messages":[{"role":"system","content":SYSTEM_PROMPT},{"role":"user","content":user_content}],"max_tokens":300,"temperature":0.65}
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": [{"role": "system", "content": system_prompt}] + messages_payload,
+        "max_tokens": max_tokens,
+        "temperature": temperature
+    }
     try:
         r = requests.post(url, headers=headers, json=payload, timeout=30)
         r.raise_for_status()
         return r.json()["choices"][0]["message"]["content"].strip()
     except Exception as e:
         print(f"Groq error: {e}")
-        return f"Hi {name}, thank you for your interest in Al Noor Properties. Based on your requirements we have found an excellent match for you." if language == "english" else f"مرحباً {name}، شكراً لاهتمامك بعقارات النور. لقينا لك خيارات ممتازة تناسب متطلباتك."
+        return None
+
+def generate_ai_recommendation(name, budget, prop_type, timeline, language):
+    user_content = f"LEAD NAME: {name}\nLEAD BUDGET: {budget}\nLEAD PROPERTY TYPE: {prop_type}\nLEAD TIMELINE: {timeline}\nLEAD LANGUAGE: {language}\n\nWrite the WhatsApp recommendation now."
+    result = call_groq(RECOMMENDATION_SYSTEM_PROMPT, [{"role": "user", "content": user_content}], max_tokens=300)
+    if result:
+        return result
+    return f"Hi {name}, thank you for your interest in Al Noor Properties. Based on your requirements we have found an excellent match for you." if language == "english" else f"مرحباً {name}، شكراً لاهتمامك بعقارات النور. لقينا لك خيارات ممتازة تناسب متطلباتك."
+
+def generate_sales_response(conv, incoming_text):
+    """Generate AI sales response using full conversation history."""
+    lang = conv.get("language", "english")
+    # Build conversation history for Groq
+    history_for_ai = []
+    for msg in conv.get("history", []):
+        if msg["role"] == "user":
+            history_for_ai.append({"role": "user", "content": msg["text"]})
+        elif msg["role"] in ["bot", "agent"]:
+            history_for_ai.append({"role": "assistant", "content": msg["text"]})
+
+    # Add context about the lead
+    context = f"""LEAD PROFILE:
+Name: {conv.get('name', 'Unknown')}
+Budget: {conv.get('budget', 'Unknown')}
+Property Type: {conv.get('property_type', 'Unknown')}
+Timeline: {conv.get('timeline', 'Unknown')}
+Language: {lang}
+Source: {conv.get('source', 'whatsapp')}
+
+The lead just sent: {incoming_text}
+
+Continue the sales conversation. Your goal is to secure a viewing appointment booking."""
+
+    history_for_ai.append({"role": "user", "content": context})
+    result = call_groq(SALES_SYSTEM_PROMPT, history_for_ai, max_tokens=350, temperature=0.72)
+    return result
 
 def send_whatsapp_text(to_number, message_text):
     clean = to_number.replace("+","").replace(" ","").replace("-","")
@@ -252,18 +335,35 @@ def send_whatsapp_document(to_number, pdf_url, filename):
         return False
 
 def send_agent_alert(conv, phone):
-    hot = "🔥 HOT LEAD" if conv.get("budget") and any(k in conv["budget"] for k in ["130000","200000","Above"]) else "🔔 NEW LEAD"
+    hot = "🔥 HOT LEAD" if conv.get("budget") and any(k in conv["budget"] for k in ["130000","200000","Above"]) else "🔔 NEW QUALIFIED LEAD"
     alert = (
-        f"{hot} — PropertyIQ\n\n"
+        f"{hot} — BOOKING CONFIRMED\n\n"
         f"Name: {conv.get('name')}\n"
         f"Phone: +{phone}\n"
         f"Budget: {conv.get('budget')}\n"
         f"Property Type: {conv.get('property_type','').replace('_',' ').title()}\n"
         f"Timeline: {conv.get('timeline')}\n"
-        f"Language: {'Arabic' if conv.get('language')=='arabic' else 'English'}\n\n"
-        f"✅ AI recommendation + brochure sent to lead.\n"
+        f"Language: {'Arabic' if conv.get('language')=='arabic' else 'English'}\n"
+        f"Source: {conv.get('source','WhatsApp').title()}\n\n"
+        f"✅ Lead has confirmed a viewing appointment.\n"
         f"📋 Agent dashboard:\n"
         f"{RENDER_URL}/agent?key={AGENT_DASHBOARD_KEY}"
+    )
+    send_whatsapp_text(AGENT_WHATSAPP, alert)
+
+def send_new_lead_alert(conv, phone):
+    """Alert agent when a new lead comes in from the web form."""
+    hot = "🔥 HOT LEAD" if conv.get("budget") and any(k in (conv.get("budget") or "") for k in ["130000","200000","Above"]) else "🔔 NEW LEAD"
+    source = conv.get('source', 'whatsapp').title()
+    alert = (
+        f"{hot} — {source}\n\n"
+        f"Name: {conv.get('name')}\n"
+        f"Phone: +{phone}\n"
+        f"Budget: {conv.get('budget')}\n"
+        f"Property: {conv.get('property_type','').replace('_',' ').title()}\n"
+        f"Language: {'Arabic' if conv.get('language')=='arabic' else 'English'}\n\n"
+        f"✅ AI recommendation + brochure sent. Bot is now nurturing the lead.\n"
+        f"📋 Dashboard: {RENDER_URL}/agent?key={AGENT_DASHBOARD_KEY}"
     )
     send_whatsapp_text(AGENT_WHATSAPP, alert)
 
@@ -309,18 +409,17 @@ def log_to_notion(conv, phone, ai_response):
         print("Lead logged to Notion.")
     except Exception as e:
         print(f"Notion error: {e}")
-        if hasattr(e, "response") and e.response is not None:
-            print(f"Notion response: {e.response.text}")
 
 def process_message(phone, incoming_text):
     conv = get_conversation(phone)
-    if conv["state"] in ["new","asked_name"]:
+    if conv["state"] in ["new", "asked_name"]:
         if detect_language(incoming_text) == "arabic":
             conv["language"] = "arabic"
     lang = conv["language"]
     add_to_history(phone, "user", incoming_text)
     msgs = MESSAGES[lang]
 
+    # ── Initial qualification flow ──────────────────────────────────────────
     if conv["state"] == "new":
         conv["state"] = "asked_name"
         reply = msgs["welcome"]
@@ -363,25 +462,63 @@ def process_message(phone, incoming_text):
 
     if conv["state"] == "asked_timeline":
         conv["timeline"] = parse_timeline(incoming_text)
-        conv["state"] = "complete"
-        ai_response = generate_ai_recommendation(conv["name"], conv["budget"], conv["property_type"], conv["timeline"], conv["language"])
-        full_response = ai_response + msgs["handover"]
-        send_whatsapp_text(f"+{phone}", full_response)
-        add_to_history(phone, "bot", full_response)
+        # Send initial AI recommendation
+        ai_response = generate_ai_recommendation(conv["name"], conv["budget"], conv["property_type"], conv["timeline"], lang)
+        send_whatsapp_text(f"+{phone}", ai_response)
+        add_to_history(phone, "bot", ai_response)
+        # Send brochure
         matched = select_property(conv["budget"], conv["property_type"])
         pdf_url = f"{RENDER_URL}/static/brochures/{matched['filename']}"
         send_whatsapp_document(f"+{phone}", pdf_url, matched["name"] + ".pdf")
-        send_agent_alert(conv, phone)
+        # Log to CRMs
         log_to_sheets(conv, phone, ai_response)
         log_to_notion(conv, phone, ai_response)
-        conv["state"] = "handed_over"
+        # Alert agent that a new lead is being nurtured
+        send_new_lead_alert(conv, phone)
+        # Move to AI sales nurturing state
+        conv["state"] = "ai_nurturing"
         return
 
-    if conv["state"] in ["complete","handed_over"]:
-        add_to_history(phone, "user", incoming_text)
-        alert = f"💬 LEAD REPLY — {conv.get('name', phone)}\n\nPhone: +{phone}\nMessage: {incoming_text}\n\nReply via agent dashboard:\n{RENDER_URL}/agent?key={AGENT_DASHBOARD_KEY}"
+    # ── AI sales nurturing state — bot continues until booking confirmed ────
+    if conv["state"] == "ai_nurturing":
+        ai_reply = generate_sales_response(conv, incoming_text)
+        if not ai_reply:
+            fallback = "Thank you for your message! Let me get our specialist Ahmed to reach out to you directly. He'll be in touch very soon 🙏" if lang == "english" else "شكراً على رسالتك! متخصصنا أحمد البلوشي راح يتواصل معك مباشرة قريباً 🙏"
+            send_whatsapp_text(f"+{phone}", fallback)
+            add_to_history(phone, "bot", fallback)
+            return
+
+        booking_confirmed = "[BOOKING_CONFIRMED]" in ai_reply
+        clean_reply = ai_reply.replace("[BOOKING_CONFIRMED]", "").strip()
+
+        if booking_confirmed:
+            # Append booking confirmation sign-off
+            full_reply = clean_reply + msgs["booking_confirmed_agent"]
+            send_whatsapp_text(f"+{phone}", full_reply)
+            add_to_history(phone, "bot", full_reply)
+            conv["state"] = "handed_over"
+            conv["booking_confirmed"] = True
+            # Alert agent with booking
+            send_agent_alert(conv, phone)
+        else:
+            send_whatsapp_text(f"+{phone}", clean_reply)
+            add_to_history(phone, "bot", clean_reply)
+        return
+
+    # ── After handover — agent has taken over, still log incoming replies ───
+    if conv["state"] == "handed_over":
+        # If agent hasn't joined yet or lead replies, alert agent
+        alert = (
+            f"💬 LEAD REPLY — {conv.get('name', phone)}\n\n"
+            f"Phone: +{phone}\n"
+            f"Message: {incoming_text}\n\n"
+            f"📋 Reply via dashboard:\n{RENDER_URL}/agent?key={AGENT_DASHBOARD_KEY}"
+        )
         send_whatsapp_text(AGENT_WHATSAPP, alert)
         return
+
+
+# ── Routes ───────────────────────────────────────────────────────────────────
 
 @app.route("/", methods=["GET"])
 def form():
@@ -396,24 +533,59 @@ def submit():
     prop_type = request.form.get("property_type","").strip()
     language  = request.form.get("language","English").strip()
     message   = request.form.get("message","").strip()
+
     if not all([name, phone, email, budget, prop_type]):
         return "Missing required fields", 400
+
     lang_key = "arabic" if "arabic" in language.lower() else "english"
-    ai_response = generate_ai_recommendation(name, budget, prop_type, "Web form enquiry", lang_key)
-    full_response = ai_response + MESSAGES[lang_key]["handover"]
-    send_whatsapp_text(phone, full_response)
+    clean_phone = phone.replace("+","").replace(" ","").replace("-","")
+
+    # Map form prop_type to internal key
     prop_type_key = "apartment_small"
-    if "3" in prop_type or "large" in prop_type.lower(): prop_type_key = "apartment_large"
+    if "3" in prop_type or "large" in prop_type.lower() or "3 or More" in prop_type: prop_type_key = "apartment_large"
     elif "villa" in prop_type.lower(): prop_type_key = "villa"
     elif "studio" in prop_type.lower(): prop_type_key = "studio"
+
+    # Create/update conversation record
+    conversations[clean_phone] = {
+        "state": "ai_nurturing",
+        "language": lang_key,
+        "name": name.split()[0].capitalize(),
+        "property_type": prop_type_key,
+        "budget": budget,
+        "timeline": message or "Web form enquiry",
+        "history": [],
+        "booking_confirmed": False,
+        "source": "web_form",
+        "created_at": datetime.now().isoformat(),
+        "email": email,
+    }
+    conv = conversations[clean_phone]
+
+    # Generate and send AI recommendation
+    ai_response = generate_ai_recommendation(name, budget, prop_type, message or "Web form enquiry", lang_key)
+    send_whatsapp_text(phone, ai_response)
+    add_to_history(clean_phone, "bot", ai_response)
+
+    # Send brochure
     matched = select_property(budget.replace(",",""), prop_type_key)
     pdf_url = f"{RENDER_URL}/static/brochures/{matched['filename']}"
     send_whatsapp_document(phone, pdf_url, matched["name"] + ".pdf")
-    alert = f"🔔 NEW LEAD — Web Form\n\nName: {name}\nPhone: {phone}\nEmail: {email}\nBudget: {budget}\nProperty: {prop_type}\nLanguage: {language}\nMessage: {message or 'None'}\n\n✅ AI recommendation + brochure sent."
+
+    # Alert agent
+    alert = (
+        f"🔔 NEW LEAD — Web Form\n\n"
+        f"Name: {name}\nPhone: {phone}\nEmail: {email}\n"
+        f"Budget: {budget}\nProperty: {prop_type}\n"
+        f"Language: {language}\nMessage: {message or 'None'}\n\n"
+        f"✅ AI recommendation + brochure sent. Bot is now nurturing.\n"
+        f"📋 Dashboard: {RENDER_URL}/agent?key={AGENT_DASHBOARD_KEY}"
+    )
     send_whatsapp_text(AGENT_WHATSAPP, alert)
-    conv_data = {"name":name,"budget":budget,"property_type":prop_type,"timeline":"Web form","language":lang_key}
-    log_to_sheets(conv_data, phone.replace("+",""), ai_response)
-    log_to_notion(conv_data, phone.replace("+",""), ai_response)
+
+    log_to_sheets(conv, clean_phone, ai_response)
+    log_to_notion(conv, clean_phone, ai_response)
+
     return redirect(url_for("thank_you", name=name.split()[0]))
 
 @app.route("/webhook", methods=["GET"])
@@ -467,6 +639,9 @@ def agent_send():
         success = send_whatsapp_text(full_phone, message)
         if phone in conversations:
             add_to_history(phone, "agent", message)
+            # Mark as handed over once agent sends a message
+            if conversations[phone]["state"] != "handed_over":
+                conversations[phone]["state"] = "handed_over"
         return jsonify({"success": success})
     return jsonify({"success":False}), 400
 
@@ -482,7 +657,17 @@ def thank_you():
 
 @app.route("/health")
 def health():
-    return jsonify({"status":"PropertyIQ is live","active_conversations":len(conversations)}), 200
+    total = len(conversations)
+    booked = sum(1 for c in conversations.values() if c.get("booking_confirmed"))
+    nurturing = sum(1 for c in conversations.values() if c.get("state") == "ai_nurturing")
+    handed_over = sum(1 for c in conversations.values() if c.get("state") == "handed_over")
+    return jsonify({
+        "status": "PropertyIQ is live",
+        "active_conversations": total,
+        "booking_confirmed": booked,
+        "ai_nurturing": nurturing,
+        "handed_over": handed_over,
+    }), 200
 
 generate_brochures()
 
