@@ -97,6 +97,95 @@ button:active{transform:scale(0.99)}
   font-size:11px;color:var(--muted);
   margin-top:1rem;line-height:1.6;
 }
+.phone-wrap{
+  display:flex;
+  align-items:stretch;
+  border:1px solid var(--border);
+  border-radius:2px;
+  overflow:hidden;
+  background:#fff;
+  transition:border-color .2s;
+}
+.phone-wrap:focus-within{
+  border-color:var(--gold);
+}
+.country-select-wrap{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:0 10px;
+  border-right:1px solid var(--border);
+  background:#fafaf8;
+  position:relative;
+  min-width:90px;
+  cursor:pointer;
+  flex-shrink:0;
+}
+.country-select-wrap select{
+  position:absolute;
+  top:0;left:0;
+  width:100%;height:100%;
+  opacity:0;
+  cursor:pointer;
+  border:none;
+  padding:0;
+}
+#code-display{
+  font-size:13px;
+  color:var(--ink);
+  font-weight:500;
+  pointer-events:none;
+  white-space:nowrap;
+}
+.phone-wrap input[type="tel"]{
+  border:none;
+  flex:1;
+  border-radius:0;
+  min-width:0;
+}
+.phone-wrap input[type="tel"]:focus{
+  border:none;
+  outline:none;
+}
+.search-wrap{
+  position:absolute;
+  top:100%;left:0;
+  width:260px;
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:4px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.12);
+  z-index:100;
+  display:none;
+  max-height:280px;
+  overflow:hidden;
+  flex-direction:column;
+}
+.search-wrap.open{display:flex}
+.search-wrap input{
+  border:none;
+  border-bottom:1px solid var(--border);
+  border-radius:0;
+  padding:10px 14px;
+  font-size:13px;
+}
+.search-wrap input:focus{border-color:var(--border)}
+.country-list{
+  overflow-y:auto;
+  flex:1;
+}
+.country-option{
+  padding:9px 14px;
+  font-size:13px;
+  cursor:pointer;
+  color:var(--ink);
+  display:flex;
+  align-items:center;
+  gap:8px;
+  transition:background .1s;
+}
+.country-option:hover{background:var(--surface)}
+.country-option.selected{background:#fdf8ec;font-weight:500}
 @media(max-width:480px){.row{grid-template-columns:1fr}}
 </style>
 </head>
@@ -108,7 +197,7 @@ button:active{transform:scale(0.99)}
     <p>Complete this form and receive a personalised property recommendation on WhatsApp within minutes.</p>
   </div>
   <div class="card-body">
-    <form action="/submit" method="POST">
+    <form action="/submit" method="POST" id="mainForm">
 
       <div class="field">
         <label>Full Name</label>
@@ -118,7 +207,17 @@ button:active{transform:scale(0.99)}
       <div class="row">
         <div class="field">
           <label>WhatsApp Number</label>
-          <input type="tel" name="phone" placeholder="+968 XXXX XXXX" required>
+          <div class="phone-wrap">
+            <div class="country-select-wrap" id="countryWrap">
+              <span id="code-display">+968</span>
+              <div class="search-wrap" id="searchWrap">
+                <input type="text" id="countrySearch" placeholder="Search country..." autocomplete="off">
+                <div class="country-list" id="countryList"></div>
+              </div>
+            </div>
+            <input type="tel" id="phone-number" placeholder="91234567" required>
+            <input type="hidden" name="phone" id="phone">
+          </div>
         </div>
         <div class="field">
           <label>Email Address</label>
@@ -169,5 +268,118 @@ button:active{transform:scale(0.99)}
     </form>
   </div>
 </div>
+
+<script>
+const countries = [
+  {name:"Oman",code:"+968",flag:"🇴🇲"},
+  {name:"UAE",code:"+971",flag:"🇦🇪"},
+  {name:"Saudi Arabia",code:"+966",flag:"🇸🇦"},
+  {name:"Qatar",code:"+974",flag:"🇶🇦"},
+  {name:"Kuwait",code:"+965",flag:"🇰🇼"},
+  {name:"Bahrain",code:"+973",flag:"🇧🇭"},
+  {name:"Yemen",code:"+967",flag:"🇾🇪"},
+  {name:"Jordan",code:"+962",flag:"🇯🇴"},
+  {name:"Lebanon",code:"+961",flag:"🇱🇧"},
+  {name:"Egypt",code:"+20",flag:"🇪🇬"},
+  {name:"Morocco",code:"+212",flag:"🇲🇦"},
+  {name:"Sudan",code:"+249",flag:"🇸🇩"},
+  {name:"Iraq",code:"+964",flag:"🇮🇶"},
+  {name:"India",code:"+91",flag:"🇮🇳"},
+  {name:"Pakistan",code:"+92",flag:"🇵🇰"},
+  {name:"Bangladesh",code:"+880",flag:"🇧🇩"},
+  {name:"Sri Lanka",code:"+94",flag:"🇱🇰"},
+  {name:"Philippines",code:"+63",flag:"🇵🇭"},
+  {name:"Indonesia",code:"+62",flag:"🇮🇩"},
+  {name:"Malaysia",code:"+60",flag:"🇲🇾"},
+  {name:"Singapore",code:"+65",flag:"🇸🇬"},
+  {name:"China",code:"+86",flag:"🇨🇳"},
+  {name:"Japan",code:"+81",flag:"🇯🇵"},
+  {name:"South Korea",code:"+82",flag:"🇰🇷"},
+  {name:"United Kingdom",code:"+44",flag:"🇬🇧"},
+  {name:"United States",code:"+1",flag:"🇺🇸"},
+  {name:"Canada",code:"+1",flag:"🇨🇦"},
+  {name:"Australia",code:"+61",flag:"🇦🇺"},
+  {name:"Germany",code:"+49",flag:"🇩🇪"},
+  {name:"France",code:"+33",flag:"🇫🇷"},
+  {name:"Italy",code:"+39",flag:"🇮🇹"},
+  {name:"Spain",code:"+34",flag:"🇪🇸"},
+  {name:"Netherlands",code:"+31",flag:"🇳🇱"},
+  {name:"Russia",code:"+7",flag:"🇷🇺"},
+  {name:"Turkey",code:"+90",flag:"🇹🇷"},
+  {name:"Nigeria",code:"+234",flag:"🇳🇬"},
+  {name:"Kenya",code:"+254",flag:"🇰🇪"},
+  {name:"South Africa",code:"+27",flag:"🇿🇦"},
+  {name:"Ghana",code:"+233",flag:"🇬🇭"},
+  {name:"Ethiopia",code:"+251",flag:"🇪🇹"},
+  {name:"Brazil",code:"+55",flag:"🇧🇷"},
+  {name:"Mexico",code:"+52",flag:"🇲🇽"},
+];
+
+let selectedCode = "+968";
+let dropdownOpen = false;
+
+const codeDisplay = document.getElementById("code-display");
+const searchWrap  = document.getElementById("searchWrap");
+const countryWrap = document.getElementById("countryWrap");
+const countryList = document.getElementById("countryList");
+const searchInput = document.getElementById("countrySearch");
+
+function renderList(filter){
+  const filtered = filter
+    ? countries.filter(c =>
+        c.name.toLowerCase().includes(filter.toLowerCase()) ||
+        c.code.includes(filter))
+    : countries;
+  countryList.innerHTML = filtered.map((c,i) =>
+    `<div class="country-option${c.code===selectedCode&&i===0?' selected':''}"
+      onclick="selectCountry('${c.code}','${c.name}')">
+      <span>${c.flag}</span>
+      <span>${c.name}</span>
+      <span style="color:var(--muted);margin-left:auto">${c.code}</span>
+    </div>`
+  ).join("");
+}
+
+function selectCountry(code, name){
+  selectedCode = code;
+  codeDisplay.textContent = code;
+  closeDropdown();
+}
+
+function openDropdown(){
+  searchWrap.classList.add("open");
+  dropdownOpen = true;
+  searchInput.value = "";
+  renderList("");
+  setTimeout(()=>searchInput.focus(), 50);
+}
+
+function closeDropdown(){
+  searchWrap.classList.remove("open");
+  dropdownOpen = false;
+}
+
+countryWrap.addEventListener("click", function(e){
+  if(e.target === searchInput) return;
+  if(dropdownOpen) closeDropdown();
+  else openDropdown();
+});
+
+searchInput.addEventListener("input", function(){
+  renderList(this.value);
+});
+
+document.addEventListener("click", function(e){
+  if(!countryWrap.contains(e.target)) closeDropdown();
+});
+
+renderList("");
+
+document.getElementById("mainForm").addEventListener("submit", function(e){
+  const number = document.getElementById("phone-number").value.trim();
+  const clean  = number.replace(/^0+/, "");
+  document.getElementById("phone").value = selectedCode + clean;
+});
+</script>
 </body>
 </html>
