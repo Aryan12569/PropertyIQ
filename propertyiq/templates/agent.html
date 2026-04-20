@@ -18,6 +18,8 @@
 }
 html,body{height:100%;overflow:hidden}
 body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+
+/* TOPBAR */
 .topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;flex-shrink:0;z-index:200}
 .logo{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--gold);letter-spacing:2.5px}
 .topbar-divider{width:1px;height:20px;background:var(--border2);margin:0 14px}
@@ -25,11 +27,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .topbar-left{display:flex;align-items:center}
 .topbar-right{display:flex;align-items:center;gap:12px}
 .live-dot{display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);color:var(--green)}
-.live-dot::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s ease-in-out infinite}
+.live-dot::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.btn-sm{background:transparent;border:1px solid var(--border2);color:var(--text-dim);padding:5px 12px;border-radius:5px;font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .2s}
+.btn-sm{background:transparent;border:1px solid var(--border2);color:var(--text-dim);padding:5px 12px;border-radius:5px;font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .2s;letter-spacing:.5px}
 .btn-sm:hover{border-color:var(--gold);color:var(--gold)}
+
+/* SHELL */
 .shell{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
 .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
 .sidebar-section{padding:1rem 1rem .4rem;font-size:9px;font-family:var(--mono);color:var(--text-muted);letter-spacing:2px;text-transform:uppercase}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 1rem;font-size:12px;color:var(--text-dim);cursor:pointer;transition:all .15s;border-left:2px solid transparent}
@@ -37,18 +43,51 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);display:flex
 .nav-item.active{color:var(--gold);border-left-color:var(--gold);background:var(--gold-glow)}
 .nav-icon{font-size:14px;width:18px;text-align:center}
 .nav-badge{margin-left:auto;font-size:9px;font-family:var(--mono);background:var(--gold-glow);color:var(--gold);padding:2px 6px;border-radius:10px;border:1px solid rgba(201,168,76,.2)}
+.nav-badge.red{background:rgba(248,113,113,.08);color:var(--red);border-color:rgba(248,113,113,.2)}
 .sidebar-spacer{flex:1}
 .sidebar-footer{padding:1rem;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);line-height:1.7}
 .sidebar-footer strong{color:var(--text-dim);display:block}
+
+/* CONTENT */
 .content{flex:1;overflow-y:auto;display:flex;flex-direction:column}
 .page{display:none;padding:1.5rem;flex:1}
 .page.active{display:block}
+
+/* KPI ROW */
 .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:1.25rem}
+@media(max-width:1300px){.kpi-row{grid-template-columns:repeat(3,1fr)}}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kpi-c,var(--gold));opacity:.6}
 .kpi-label{font-size:9px;font-family:var(--mono);color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
 .kpi-val{font-size:26px;font-weight:700;font-family:var(--mono);color:var(--kpi-c,var(--gold));line-height:1}
 .kpi-sub{font-size:10px;color:var(--text-muted);margin-top:5px}
+.kpi-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:22px;opacity:.1}
+
+/* CHART ROW */
+.chart-row{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:1.25rem}
+@media(max-width:1200px){.chart-row{grid-template-columns:1fr 1fr}}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem}
+.chart-title{font-size:11px;font-family:var(--mono);color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.chart-sub{font-size:10px;color:var(--text-muted);margin-bottom:1rem}
+
+/* Funnel */
+.funnel{display:flex;flex-direction:column;gap:8px}
+.funnel-row{display:flex;align-items:center;gap:10px}
+.funnel-label{font-size:10px;font-family:var(--mono);color:var(--text-dim);width:82px;flex-shrink:0}
+.funnel-track{flex:1;background:var(--border);border-radius:3px;height:20px;overflow:hidden}
+.funnel-fill{height:100%;border-radius:3px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:9px;font-family:var(--mono);color:rgba(255,255,255,.8);font-weight:500;min-width:28px;transition:width 1s ease}
+.funnel-n{font-size:10px;color:var(--text-muted);font-family:var(--mono);width:22px;text-align:right;flex-shrink:0}
+
+/* Donut */
+.donut-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.donut-svg{width:110px;height:110px}
+.donut-legend{width:100%;display:flex;flex-direction:column;gap:5px}
+.legend-row{display:flex;align-items:center;gap:7px;font-size:10px}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.legend-lbl{color:var(--text-dim);flex:1}
+.legend-val{color:var(--text-muted);font-family:var(--mono)}
+
+/* TABLE */
 .table-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:1.25rem}
 .table-head{display:flex;align-items:center;justify-content:space-between;padding:.875rem 1.25rem;border-bottom:1px solid var(--border)}
 .table-title{font-size:11px;font-family:var(--mono);color:var(--text-dim);letter-spacing:1px;text-transform:uppercase}
@@ -65,6 +104,8 @@ td{padding:10px 14px;font-size:12px;color:var(--text-dim);border-bottom:1px soli
 tbody tr:last-child td{border-bottom:none}
 .td-name{color:var(--text);font-weight:500}
 .td-mono{font-family:var(--mono);font-size:11px}
+
+/* BADGES */
 .badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-family:var(--mono);letter-spacing:.8px;text-transform:uppercase;padding:3px 7px;border-radius:4px;font-weight:500}
 .badge::before{content:'●';font-size:7px}
 .b-green{background:rgba(52,211,153,.08);color:var(--green);border:1px solid rgba(52,211,153,.2)}
@@ -74,10 +115,12 @@ tbody tr:last-child td{border-bottom:none}
 .b-amber{background:rgba(251,191,36,.08);color:var(--amber);border:1px solid rgba(251,191,36,.2)}
 .b-purple{background:rgba(167,139,250,.08);color:var(--purple);border:1px solid rgba(167,139,250,.2)}
 .b-muted{background:rgba(255,255,255,.04);color:var(--text-muted);border:1px solid var(--border2)}
-/* CHAT */
-.chat-layout{display:grid;grid-template-columns:300px 1fr;gap:12px;height:calc(100vh - 52px - 3rem);min-height:0}
+.b-wa{background:rgba(37,211,102,.06);color:#25D366;border:1px solid rgba(37,211,102,.15)}
+
+/* CHAT PAGE */
+.chat-layout{display:grid;grid-template-columns:300px 1fr;gap:12px;height:calc(100vh - 52px - 2rem);min-height:0}
 .lead-list{background:var(--surface);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;overflow:hidden}
-.ll-head{padding:.875rem 1rem;border-bottom:1px solid var(--border);font-size:11px;font-family:var(--mono);color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+.ll-head{padding:.875rem 1rem;border-bottom:1px solid var(--border);font-size:11px;font-family:var(--mono);color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;flex-shrink:0}
 .ll-body{overflow-y:auto;flex:1}
 .ll-item{display:flex;align-items:center;gap:10px;padding:10px 1rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
 .ll-item:hover{background:rgba(255,255,255,.02)}
@@ -88,55 +131,50 @@ tbody tr:last-child td{border-bottom:none}
 .ll-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ll-meta{font-size:10px;color:var(--text-muted);font-family:var(--mono);margin-top:1px}
 .ll-time{font-size:9px;color:var(--text-muted);font-family:var(--mono)}
-.ll-unread{width:8px;height:8px;border-radius:50%;background:var(--gold);flex-shrink:0}
+
+/* CHAT PANEL */
 .chat-panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;overflow:hidden}
 .no-chat-msg{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--text-muted);font-size:13px;gap:8px}
 .chat-hdr{padding:.875rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
 .chat-av{width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--gold)}
 .chat-hdr-name{font-size:14px;font-weight:600;color:var(--text)}
 .chat-hdr-sub{font-size:10px;color:var(--text-muted);font-family:var(--mono);margin-top:2px}
-.chat-hdr-badges{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.chat-hdr-badges{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
 .detail-strip{background:var(--surface2);border-bottom:1px solid var(--border);padding:.75rem 1.25rem;display:flex;gap:16px;flex-wrap:wrap;flex-shrink:0}
 .ds-item{display:flex;flex-direction:column;gap:2px}
 .ds-label{font-size:8px;font-family:var(--mono);color:var(--gold);letter-spacing:1.5px;text-transform:uppercase}
 .ds-val{font-size:11px;color:var(--text)}
 .chat-msgs{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:8px}
-.msg{display:flex;flex-direction:column;max-width:78%}
+.msg{display:flex;flex-direction:column;max-width:76%}
 .msg.user{align-self:flex-start}
 .msg.bot,.msg.agent{align-self:flex-end}
-.msg-role{font-size:9px;font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;opacity:.7}
+.msg-role{font-size:9px;font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;opacity:.6}
 .msg.user .msg-role{color:var(--text-muted)}
 .msg.bot .msg-role{color:var(--gold);text-align:right}
 .msg.agent .msg-role{color:var(--green);text-align:right}
-.msg-bubble{padding:9px 13px;border-radius:10px;font-size:12.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+.msg-bubble{padding:9px 13px;border-radius:10px;font-size:12.5px;line-height:1.65;white-space:pre-wrap}
 .msg.user .msg-bubble{background:var(--surface2);color:var(--text);border-radius:3px 10px 10px 10px;border:1px solid var(--border2)}
 .msg.bot .msg-bubble{background:#1E1C12;color:var(--gold);border-radius:10px 3px 10px 10px;border:1px solid rgba(201,168,76,.15)}
 .msg.agent .msg-bubble{background:#0F1E18;color:var(--green);border-radius:10px 3px 10px 10px;border:1px solid rgba(52,211,153,.15)}
 .msg-time{font-size:9px;color:var(--text-muted);font-family:var(--mono);margin-top:3px}
 .msg.user .msg-time{text-align:left}
 .msg.bot .msg-time,.msg.agent .msg-time{text-align:right}
-.reply-bar{padding:.875rem 1rem;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;flex-shrink:0}
-.reply-actions{display:flex;gap:6px;flex-wrap:wrap}
-.reply-row{display:flex;gap:8px;align-items:flex-end}
+.reply-bar{padding:.875rem 1rem;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
 .reply-input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--font);font-size:12.5px;resize:none;height:64px;outline:none;transition:border-color .2s}
 .reply-input:focus{border-color:var(--gold)}
 .reply-input::placeholder{color:var(--text-muted)}
 .btn-send{background:var(--gold);color:#1A1612;border:none;border-radius:8px;padding:9px 18px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;height:64px;transition:background .15s}
 .btn-send:hover{background:#D4B050}
 .btn-send:disabled{background:var(--border);color:var(--text-muted);cursor:not-allowed}
-.btn-action{background:transparent;border:1px solid var(--border2);color:var(--text-dim);padding:5px 12px;border-radius:6px;font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s;white-space:nowrap}
-.btn-action:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-glow)}
-.btn-action.book{border-color:rgba(52,211,153,.3);color:var(--green)}
-.btn-action.book:hover{background:rgba(52,211,153,.08)}
-.btn-action.book:disabled{opacity:.4;cursor:not-allowed}
-.send-ok{font-size:10px;color:var(--green);font-family:var(--mono);display:none}
-.booking-confirm{font-size:10px;color:var(--amber);font-family:var(--mono);display:none;padding:4px 0}
+.send-ok{font-size:10px;color:var(--green);padding:4px 1rem;font-family:var(--mono);display:none}
+
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
 </style>
 </head>
 <body>
+
 <div class="topbar">
   <div class="topbar-left">
     <div class="logo">PROPERTYIQ</div>
@@ -151,46 +189,104 @@ tbody tr:last-child td{border-bottom:none}
 </div>
 
 <div class="shell">
+
+  <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-section">Navigation</div>
-    <div class="nav-item active" id="nav-overview" onclick="showPage('overview',this)"><span class="nav-icon">◈</span> Overview</div>
-    <div class="nav-item" id="nav-pipeline" onclick="showPage('pipeline',this)"><span class="nav-icon">⊞</span> Pipeline<span class="nav-badge" id="nav-count">0</span></div>
-    <div class="nav-item" id="nav-chat" onclick="showPage('chat',this)"><span class="nav-icon">◎</span> Conversations<span class="nav-badge" id="conv-count">0</span></div>
+    <div class="nav-item active" id="nav-overview" onclick="showPage('overview',this)">
+      <span class="nav-icon">◈</span> Overview
+    </div>
+    <div class="nav-item" id="nav-pipeline" onclick="showPage('pipeline',this)">
+      <span class="nav-icon">⊞</span> Pipeline
+      <span class="nav-badge" id="nav-count">0</span>
+    </div>
+    <div class="nav-item" id="nav-chat" onclick="showPage('chat',this)">
+      <span class="nav-icon">◎</span> Conversations
+    </div>
+
+    <div class="sidebar-section" style="margin-top:.5rem">Quick Filter</div>
+    <div class="nav-item" style="font-size:11px" onclick="goFilter('all',this)"><span class="nav-icon" style="font-size:10px;color:var(--text-muted)">●</span> All Leads</div>
+    <div class="nav-item" style="font-size:11px" onclick="goFilter('ai_nurturing',this)"><span class="nav-icon" style="font-size:10px;color:var(--blue)">●</span> AI Nurturing</div>
+    <div class="nav-item" style="font-size:11px" onclick="goFilter('handed_over',this)"><span class="nav-icon" style="font-size:10px;color:var(--green)">●</span> Booked</div>
+
     <div class="sidebar-spacer"></div>
     <div class="sidebar-footer">
       <strong>Ahmed Al-Balushi</strong>
-      Senior Property Specialist<br>Al Noor Properties<br>+968 9123 4567
+      Senior Property Specialist<br>
+      Al Noor Properties<br>
+      +968 9123 4567
     </div>
   </div>
 
   <div class="content">
 
-    <!-- OVERVIEW -->
+    <!-- ══ OVERVIEW PAGE ══ -->
     <div class="page active" id="page-overview">
-      <div class="kpi-row">
-        <div class="kpi" style="--kpi-c:var(--gold)"><div class="kpi-label">Total Leads</div><div class="kpi-val" id="kpi-total">0</div><div class="kpi-sub">All time</div></div>
-        <div class="kpi" style="--kpi-c:var(--blue)"><div class="kpi-label">AI Nurturing</div><div class="kpi-val" id="kpi-nurturing">0</div><div class="kpi-sub">Bot active now</div></div>
-        <div class="kpi" style="--kpi-c:var(--green)"><div class="kpi-label">Bookings</div><div class="kpi-val" id="kpi-booked">0</div><div class="kpi-sub">Viewing confirmed</div></div>
-        <div class="kpi" style="--kpi-c:var(--red)"><div class="kpi-label">Hot Leads</div><div class="kpi-val" id="kpi-hot">0</div><div class="kpi-sub">Budget ≥ 130K OMR</div></div>
-        <div class="kpi" style="--kpi-c:var(--purple)"><div class="kpi-label">Conv. Rate</div><div class="kpi-val" id="kpi-cvr">0%</div><div class="kpi-sub">Leads → Booking</div></div>
+
+      <!-- KPIs — rendered via JS from convData -->
+      <div class="kpi-row" id="kpi-row">
+        <div class="kpi" style="--kpi-c:var(--gold)"><div class="kpi-label">Total Leads</div><div class="kpi-val" id="kpi-total">0</div><div class="kpi-sub">All time</div><div class="kpi-icon">◈</div></div>
+        <div class="kpi" style="--kpi-c:var(--blue)"><div class="kpi-label">AI Nurturing</div><div class="kpi-val" id="kpi-nurturing">0</div><div class="kpi-sub">Bot active now</div><div class="kpi-icon">◎</div></div>
+        <div class="kpi" style="--kpi-c:var(--green)"><div class="kpi-label">Bookings</div><div class="kpi-val" id="kpi-booked">0</div><div class="kpi-sub">Viewing confirmed</div><div class="kpi-icon">✓</div></div>
+        <div class="kpi" style="--kpi-c:var(--red)"><div class="kpi-label">Hot Leads</div><div class="kpi-val" id="kpi-hot">0</div><div class="kpi-sub">Budget ≥ 130K OMR</div><div class="kpi-icon">🔥</div></div>
+        <div class="kpi" style="--kpi-c:var(--purple)"><div class="kpi-label">Conv. Rate</div><div class="kpi-val" id="kpi-cvr">0%</div><div class="kpi-sub">Leads → Booking</div><div class="kpi-icon">◑</div></div>
       </div>
+
+      <!-- Charts -->
+      <div class="chart-row">
+        <!-- Funnel -->
+        <div class="chart-card">
+          <div class="chart-title">Conversion Funnel</div>
+          <div class="chart-sub">Lead journey stages</div>
+          <div class="funnel" id="funnel"></div>
+        </div>
+        <!-- Budget donut -->
+        <div class="chart-card">
+          <div class="chart-title">Budget Mix</div>
+          <div class="chart-sub">By range</div>
+          <div class="donut-wrap">
+            <svg class="donut-svg" id="budget-donut" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#1E2435" stroke-width="14"/>
+              <text x="50" y="46" text-anchor="middle" font-family="DM Mono" font-size="13" font-weight="500" fill="#E4DFCE" id="donut-total">0</text>
+              <text x="50" y="58" text-anchor="middle" font-family="DM Mono" font-size="7" fill="#4A5068">LEADS</text>
+            </svg>
+            <div class="donut-legend" id="budget-legend"></div>
+          </div>
+        </div>
+        <!-- Source donut -->
+        <div class="chart-card">
+          <div class="chart-title">Lead Source</div>
+          <div class="chart-sub">WhatsApp vs Web</div>
+          <div class="donut-wrap">
+            <svg class="donut-svg" id="source-donut" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#1E2435" stroke-width="14"/>
+              <text x="50" y="46" text-anchor="middle" font-family="DM Mono" font-size="13" font-weight="500" fill="#E4DFCE" id="src-total">0</text>
+              <text x="50" y="58" text-anchor="middle" font-family="DM Mono" font-size="7" fill="#4A5068">TOTAL</text>
+            </svg>
+            <div class="donut-legend" id="source-legend"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent activity table -->
       <div class="table-card">
         <div class="table-head">
           <div class="table-title">Recent Activity</div>
-          <div class="table-meta">Latest leads · Auto-refresh in <span id="countdown">15</span>s</div>
+          <div class="table-meta">Latest 10 leads · Auto-refresh in <span id="countdown">30</span>s</div>
         </div>
         <table>
-          <thead><tr><th>Lead</th><th>Phone</th><th>Budget</th><th>Property</th><th>Lang</th><th>Status</th><th>Msgs</th><th>Action</th></tr></thead>
+          <thead><tr><th>Lead</th><th>Phone</th><th>Budget</th><th>Property</th><th>Source</th><th>Status</th><th>Last Msg</th></tr></thead>
           <tbody id="recent-tbody"></tbody>
         </table>
       </div>
     </div>
+    <!-- end overview -->
 
-    <!-- PIPELINE -->
+    <!-- ══ PIPELINE PAGE ══ -->
     <div class="page" id="page-pipeline">
       <div class="table-card">
         <div class="table-head">
-          <div class="table-title">Lead Pipeline</div>
+          <div class="table-title">Full Pipeline</div>
           <div class="filter-row">
             <button class="fbtn active" onclick="filterPipeline(this,'all')">All</button>
             <button class="fbtn" onclick="filterPipeline(this,'nurturing')">Nurturing</button>
@@ -199,247 +295,342 @@ tbody tr:last-child td{border-bottom:none}
           </div>
         </div>
         <table>
-          <thead><tr><th>Lead</th><th>Phone</th><th>Budget</th><th>Property</th><th>Timeline</th><th>Lang</th><th>Source</th><th>Status</th><th>Msgs</th><th>Action</th></tr></thead>
+          <thead><tr><th>#</th><th>Lead</th><th>Phone</th><th>Budget</th><th>Property</th><th>Timeline</th><th>Language</th><th>Source</th><th>Status</th><th>Msgs</th><th>Action</th></tr></thead>
           <tbody id="pipeline-tbody"></tbody>
         </table>
       </div>
     </div>
+    <!-- end pipeline -->
 
-    <!-- CHAT -->
-    <div class="page" id="page-chat">
+    <!-- ══ CHAT PAGE ══ -->
+    <div class="page" id="page-chat" style="padding:1rem">
       <div class="chat-layout">
         <div class="lead-list">
-          <div class="ll-head">
-            <span>Conversations</span>
-            <span id="conv-count-badge" style="font-family:var(--mono);font-size:10px;color:var(--text-muted)">0</span>
-          </div>
-          <div class="ll-body" id="ll-body">
-            <div style="padding:2rem;text-align:center;color:var(--text-muted);font-size:12px">No conversations yet.</div>
-          </div>
+          <div class="ll-head">Conversations (<span id="conv-count">0</span>)</div>
+          <div class="ll-body" id="ll-body"></div>
         </div>
         <div class="chat-panel" id="chat-panel">
           <div class="no-chat-msg" id="no-chat">
-            <span style="font-size:28px;opacity:.3">◎</span>
-            <span>Select a conversation to view messages</span>
+            <div style="font-size:36px;opacity:.2">◎</div>
+            <div>Select a conversation</div>
           </div>
-          <div id="chat-active" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+          <div id="chat-active" style="display:none;flex-direction:column;height:100%;overflow:hidden">
             <div class="chat-hdr">
-              <div class="chat-av" id="c-av">?</div>
-              <div>
-                <div class="chat-hdr-name" id="c-name">—</div>
-                <div class="chat-hdr-sub" id="c-sub">—</div>
-              </div>
+              <div class="chat-av" id="c-av"></div>
+              <div style="flex:1"><div class="chat-hdr-name" id="c-name"></div><div class="chat-hdr-sub" id="c-sub"></div></div>
               <div class="chat-hdr-badges" id="c-badges"></div>
             </div>
             <div class="detail-strip" id="c-details"></div>
             <div class="chat-msgs" id="c-msgs"></div>
+            <div class="send-ok" id="send-ok">✓ Sent via WhatsApp</div>
             <div class="reply-bar">
-              <div class="reply-actions">
-                <button class="btn-action book" id="btn-book" onclick="sendBooking()">📅 Send Booking Request</button>
-                <span class="booking-confirm" id="booking-confirm">✓ Booking slots sent to lead</span>
-              </div>
-              <div class="reply-row">
-                <textarea class="reply-input" id="reply-input" placeholder="Type a message…" onkeydown="handleEnter(event)"></textarea>
-                <button class="btn-send" id="btn-send" onclick="sendMsg()">Send</button>
-              </div>
-              <div class="send-ok" id="send-ok">✓ Message sent via WhatsApp</div>
+              <textarea class="reply-input" id="reply-input" placeholder="Type your message…" onkeydown="handleEnter(event)"></textarea>
+              <button class="btn-send" id="btn-send" onclick="sendMsg()">Send</button>
             </div>
           </div>
         </div>
       </div>
     </div>
+    <!-- end chat -->
 
   </div>
 </div>
 
 <script>
-const DASHBOARD_KEY = "{{ key }}";
+const DASHBOARD_KEY = {{ key | tojson }};
+
+// ── convData is mutable — populated and updated via API ──────────────────────
 let convData = {};
 let activePhone = null;
 
-function esc(s){ if(!s)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function cap(s){ if(!s)return''; return String(s).replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
-function isHot(c){ return c.budget && (c.budget.includes('130000')||c.budget.includes('200000')||c.budget.includes('Above')); }
-
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/
+/g,'<br>'); }
+function cap(s){ return (s||'').replace(/_/g,' ').replace(/\w/g,c=>c.toUpperCase()); }
+function isHot(c){ const b=c.budget||''; return b.includes('130000')||b.includes('200000')||b.includes('Above'); }
 function statusBadge(c){
-  if(c.booking_confirmed) return '<span class="badge b-green">Booked</span>';
-  if(c.state==='booking_slots_sent') return '<span class="badge b-amber">Awaiting Slot</span>';
-  if(c.state==='ai_nurturing') return '<span class="badge b-blue">AI Nurturing</span>';
-  if(c.state==='handed_over') return '<span class="badge b-purple">Agent Active</span>';
-  if(c.state==='asked_name'||c.state==='asked_type'||c.state==='asked_budget'||c.state==='asked_timeline') return '<span class="badge b-muted">Qualifying</span>';
+  if (c.booking_confirmed)         return '<span class="badge b-green">Booked ✓</span>';
+  if (c.state==='ai_nurturing')    return '<span class="badge b-blue">AI Nurturing</span>';
+  if (c.state==='handed_over')     return '<span class="badge b-amber">Agent Active</span>';
+  if (['asked_type','asked_budget','asked_timeline'].includes(c.state)) return '<span class="badge b-purple">Qualifying</span>';
+  if (c.state==='asked_name')      return '<span class="badge b-muted">Started</span>';
   return `<span class="badge b-muted">${cap(c.state)}</span>`;
 }
-
+function sourceBadge(c){ return c.source==='web_form' ? '<span class="badge b-blue">Web</span>' : '<span class="badge b-wa">WA</span>'; }
 function budgetBadge(c){
-  if(!c.budget) return '—';
-  return `<span class="badge b-gold">${c.budget.replace(' OMR','')} OMR</span>`;
+  if (!c.budget) return '—';
+  const cls = isHot(c) ? 'b-red' : 'b-gold';
+  return `<span class="badge ${cls}">${(c.budget).replace(' OMR','')}</span>`;
 }
 
-function renderAll(){
+// ── Compute stats from convData ───────────────────────────────────────────────
+function computeStats(){
   const phones = Object.keys(convData);
-  const total     = phones.length;
-  const nurturing = phones.filter(p=>convData[p].state==='ai_nurturing').length;
-  const booked    = phones.filter(p=>convData[p].booking_confirmed).length;
-  const hot       = phones.filter(p=>isHot(convData[p])).length;
-  const cvr       = total>0 ? Math.round(booked/total*100)+'%' : '0%';
+  const total = phones.length;
+  let booked=0, nurturing=0, hot=0, web=0, wa=0, fQual=0, fRecSent=0;
+  let b1=0,b2=0,b3=0,b4=0,b5=0;
+  phones.forEach(p => {
+    const c = convData[p];
+    if (c.booking_confirmed) booked++;
+    if (c.state==='ai_nurturing') nurturing++;
+    if (['asked_type','asked_budget','asked_timeline'].includes(c.state)) fQual++;
+    if (['ai_nurturing','handed_over'].includes(c.state)) fRecSent++;
+    const b = (c.budget||'');
+    if (b.includes('130000')||b.includes('200000')||b.includes('Above')) hot++;
+    if (c.source==='web_form') web++; else wa++;
+    if (b.includes('Under'))            b1++;
+    else if (b.includes('60000-90000')) b2++;
+    else if (b.includes('90000-130000'))b3++;
+    else if (b.includes('130000-200000'))b4++;
+    else if (b.includes('Above'))       b5++;
+  });
+  const cvr = total > 0 ? Math.round(booked/total*100*10)/10 : 0;
+  return {phones,total,booked,nurturing,hot,web,wa,fQual,fRecSent,b1,b2,b3,b4,b5,cvr};
+}
 
-  document.getElementById('kpi-total').textContent     = total;
-  document.getElementById('kpi-nurturing').textContent = nurturing;
-  document.getElementById('kpi-booked').textContent    = booked;
-  document.getElementById('kpi-hot').textContent       = hot;
-  document.getElementById('kpi-cvr').textContent       = cvr;
-  document.getElementById('nav-count').textContent     = total;
-  document.getElementById('conv-count').textContent    = total;
-  document.getElementById('conv-count-badge').textContent = total;
+// ── Render everything from current convData ───────────────────────────────────
+function renderAll(){
+  const s = computeStats();
+
+  // KPIs
+  document.getElementById('kpi-total').textContent     = s.total;
+  document.getElementById('kpi-nurturing').textContent = s.nurturing;
+  document.getElementById('kpi-booked').textContent    = s.booked;
+  document.getElementById('kpi-hot').textContent       = s.hot;
+  document.getElementById('kpi-cvr').textContent       = s.cvr + '%';
+  document.getElementById('nav-count').textContent     = s.total;
+  document.getElementById('conv-count').textContent    = s.total;
+
+  // Funnel
+  const funnelRows = [
+    {label:'Leads In',  n:s.total,     color:'var(--gold)'},
+    {label:'Qualifying',n:s.fQual,     color:'var(--blue)'},
+    {label:'Rec. Sent', n:s.fRecSent,  color:'var(--amber)'},
+    {label:'AI Nurture',n:s.nurturing, color:'var(--purple)'},
+    {label:'Booked',    n:s.booked,    color:'var(--green)'},
+  ];
+  const max = s.total || 1;
+  document.getElementById('funnel').innerHTML = funnelRows.map(r => {
+    const pct = Math.min(100, Math.round(r.n/max*100));
+    return `<div class="funnel-row">
+      <div class="funnel-label">${r.label}</div>
+      <div class="funnel-track"><div class="funnel-fill" style="width:${pct}%;background:${r.color}">${r.n}</div></div>
+      <div class="funnel-n">${r.n}</div>
+    </div>`;
+  }).join('');
+
+  // Budget donut
+  renderDonut('budget-donut','donut-total','budget-legend',
+    [{n:s.b1,color:'#C9A84C',label:'<60K'},{n:s.b2,color:'#60A5FA',label:'60–90K'},
+     {n:s.b3,color:'#34D399',label:'90–130K'},{n:s.b4,color:'#F87171',label:'130–200K'},
+     {n:s.b5,color:'#A78BFA',label:'>200K'}], s.b1+s.b2+s.b3+s.b4+s.b5);
+
+  // Source donut
+  renderDonut('source-donut','src-total','source-legend',
+    [{n:s.wa,color:'#25D366',label:'WhatsApp'},{n:s.web,color:'#60A5FA',label:'Web Form'}], s.total);
 
   // Recent table
-  const recentPhones = phones.slice().reverse().slice(0,15);
-  document.getElementById('recent-tbody').innerHTML = recentPhones.map(p=>{
-    const c=convData[p];
-    return `<tr onclick="goToChat('${p}')">
-      <td class="td-name">${esc(c.name||('Lead +'+p))}${isHot(c)?' 🔥':''}</td>
-      <td class="td-mono">+${p}</td>
-      <td>${budgetBadge(c)}</td>
-      <td style="font-size:11px">${cap(c.property_type)||'—'}</td>
-      <td><span class="badge b-muted">${cap(c.language)}</span></td>
-      <td>${statusBadge(c)}</td>
-      <td class="td-mono">${(c.history||[]).length}</td>
-      <td><button onclick="event.stopPropagation();goToChat('${p}')" style="background:transparent;border:1px solid var(--border2);color:var(--gold);padding:4px 10px;border-radius:4px;font-size:10px;font-family:var(--mono);cursor:pointer">Chat</button></td>
-    </tr>`;
-  }).join('');
+  const recent = s.phones.slice().reverse().slice(0,10);
+  const rtbody = document.getElementById('recent-tbody');
+  rtbody.innerHTML = !recent.length
+    ? '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);font-size:12px">No leads yet.</td></tr>'
+    : recent.map(p => {
+        const c = convData[p];
+        const h = (c.history||[]);
+        const lastTime = h.length ? h[h.length-1].time : '—';
+        return `<tr onclick="goToChat('${p}')">
+          <td><div style="display:flex;align-items:center;gap:6px">${isHot(c)?'<span>🔥</span>':''}<span class="td-name">${esc(c.name||('Lead +'+p))}</span></div></td>
+          <td class="td-mono">+${p}</td>
+          <td>${budgetBadge(c)}</td>
+          <td style="font-size:11px">${cap(c.property_type)||'—'}</td>
+          <td>${sourceBadge(c)}</td>
+          <td>${statusBadge(c)}</td>
+          <td class="td-mono" style="font-size:10px">${lastTime}</td>
+        </tr>`;
+      }).join('');
 
   // Pipeline table
-  document.getElementById('pipeline-tbody').innerHTML = phones.slice().reverse().map(p=>{
-    const c=convData[p];
-    const h=isHot(c);
-    return `<tr data-state="${c.state}" data-booked="${c.booking_confirmed?'y':'n'}" data-hot="${h?'y':'n'}" onclick="goToChat('${p}')">
-      <td class="td-name">${esc(c.name||('Lead +'+p))}${h?' 🔥':''}</td>
-      <td class="td-mono">+${p}</td>
-      <td>${budgetBadge(c)}</td>
-      <td style="font-size:11px">${cap(c.property_type)||'—'}</td>
-      <td style="font-size:11px;color:var(--text-muted)">${esc(c.timeline)||'—'}</td>
-      <td><span class="badge b-muted">${cap(c.language)}</span></td>
-      <td><span class="badge b-muted">${c.source==='web_form'?'Web':'WhatsApp'}</span></td>
-      <td>${statusBadge(c)}</td>
-      <td class="td-mono">${(c.history||[]).length}</td>
-      <td><button onclick="event.stopPropagation();goToChat('${p}')" style="background:transparent;border:1px solid var(--border2);color:var(--gold);padding:4px 10px;border-radius:4px;font-size:10px;font-family:var(--mono);cursor:pointer">Open</button></td>
-    </tr>`;
-  }).join('');
+  const all = s.phones.slice().reverse();
+  const ptbody = document.getElementById('pipeline-tbody');
+  ptbody.innerHTML = !all.length
+    ? '<tr><td colspan="11" style="text-align:center;padding:2rem;color:var(--text-muted);font-size:12px">No leads yet.</td></tr>'
+    : all.map((p,i) => {
+        const c = convData[p];
+        const h = isHot(c);
+        return `<tr data-state="${c.state}" data-hot="${h?'y':'n'}" data-booked="${c.booking_confirmed?'y':'n'}">
+          <td class="td-mono" style="font-size:10px;color:var(--text-muted)">${i+1}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--gold);flex-shrink:0">${(c.name||p)[0].toUpperCase()}</div>
+              <div><div class="td-name">${esc(c.name||'Unknown')}</div>${c.email?`<div style="font-size:10px;color:var(--text-muted)">${esc(c.email)}</div>`:''}</div>
+              ${h?'<span>🔥</span>':''}
+            </div>
+          </td>
+          <td class="td-mono">+${p}</td>
+          <td>${budgetBadge(c)}</td>
+          <td style="font-size:11px">${cap(c.property_type)||'—'}</td>
+          <td style="font-size:11px;color:var(--text-muted)">${esc(c.timeline)||'—'}</td>
+          <td><span class="badge b-muted">${cap(c.language)}</span></td>
+          <td>${sourceBadge(c)}</td>
+          <td>${statusBadge(c)}</td>
+          <td class="td-mono">${(c.history||[]).length}</td>
+          <td>
+            <button onclick="goToChat('${p}')" style="background:transparent;border:1px solid var(--border2);color:var(--gold);padding:4px 10px;border-radius:4px;font-size:10px;font-family:var(--mono);cursor:pointer"
+              onmouseover="this.style.background='var(--gold-glow)'" onmouseout="this.style.background='transparent'">Open Chat</button>
+          </td>
+        </tr>`;
+      }).join('');
 
+  // Lead list sidebar
   rebuildLeadList();
 }
 
+function renderDonut(svgId, totalId, legendId, slices, total){
+  const CIRC = 238.76;
+  document.getElementById(totalId).textContent = total;
+  const svg = document.getElementById(svgId);
+  // Remove old arcs (keep circles with no stroke-dasharray = the grey base)
+  Array.from(svg.querySelectorAll('circle[stroke-dasharray]')).forEach(c=>c.remove());
+  let offset = 0;
+  slices.forEach(s => {
+    if (total > 0 && s.n > 0) {
+      const dash = s.n/total*CIRC;
+      const circ = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      circ.setAttribute('cx','50'); circ.setAttribute('cy','50'); circ.setAttribute('r','38');
+      circ.setAttribute('fill','none'); circ.setAttribute('stroke',s.color); circ.setAttribute('stroke-width','14');
+      circ.setAttribute('stroke-dasharray',`${dash.toFixed(2)} ${(CIRC-dash).toFixed(2)}`);
+      circ.setAttribute('stroke-dashoffset',`${-offset.toFixed(2)}`);
+      circ.setAttribute('transform','rotate(-90 50 50)'); circ.setAttribute('opacity','.85');
+      svg.insertBefore(circ, svg.querySelector('text'));
+      offset += dash;
+    }
+  });
+  document.getElementById(legendId).innerHTML = slices.map(s =>
+    `<div class="legend-row"><div class="legend-dot" style="background:${s.color}"></div><div class="legend-lbl">${s.label}</div><div class="legend-val">${s.n}</div></div>`
+  ).join('');
+}
+
 function rebuildLeadList(){
-  const phones = Object.keys(convData).reverse();
-  if(!phones.length){
-    document.getElementById('ll-body').innerHTML='<div style="padding:2rem;text-align:center;color:var(--text-muted);font-size:12px">No conversations yet.</div>';
+  const llBody = document.getElementById('ll-body');
+  const allPhones = Object.keys(convData).reverse();
+  document.getElementById('conv-count').textContent = allPhones.length;
+  if (!allPhones.length){
+    llBody.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-muted);font-size:12px">No conversations yet.</div>';
     return;
   }
-  document.getElementById('ll-body').innerHTML = phones.map(p=>{
-    const c=convData[p];
-    const hist=c.history||[];
-    const lastMsg = hist.length ? hist[hist.length-1] : null;
-    const lastTime = lastMsg ? lastMsg.time : '';
-    const lastText = lastMsg ? lastMsg.text.substring(0,30)+'...' : '';
+  llBody.innerHTML = allPhones.map(p => {
+    const c = convData[p];
+    const h = (c.history||[]);
+    const lastTime = h.length ? h[h.length-1].time : '';
     const sub = c.booking_confirmed ? '✓ Booked'
-      : c.state==='booking_slots_sent' ? '📅 Awaiting slot selection'
       : c.state==='ai_nurturing' ? 'Bot nurturing…'
       : c.state==='handed_over'  ? 'Agent active'
       : cap(c.state);
-    // Highlight if lead sent last message
-    const hasNewLead = lastMsg && lastMsg.role === 'user';
     return `<div class="ll-item${p===activePhone?' active':''}" id="li-${p}" onclick="openChat('${p}')">
       <div class="ll-av">${(c.name||p)[0].toUpperCase()}</div>
       <div class="ll-info">
         <div class="ll-name">${esc(c.name||('Lead +'+p))}${isHot(c)?' 🔥':''}</div>
         <div class="ll-meta">${sub}</div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-        <div class="ll-time">${lastTime}</div>
-        ${hasNewLead?'<div class="ll-unread"></div>':''}
-      </div>
+      <div class="ll-time">${lastTime}</div>
     </div>`;
   }).join('');
 }
 
-function showPage(name,el){
+// ── Page navigation ───────────────────────────────────────────────────────────
+function showPage(name, el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
   if(el) el.classList.add('active');
 }
 function goToChat(phone){
-  showPage('chat',document.getElementById('nav-chat'));
-  setTimeout(()=>openChat(phone),30);
+  showPage('chat', document.getElementById('nav-chat'));
+  setTimeout(()=>openChat(phone), 30);
 }
-function filterPipeline(btn,f){
+function goFilter(state, el){
+  showPage('pipeline', document.getElementById('nav-pipeline'));
+  setTimeout(()=>{
+    const map = {all:'all',ai_nurturing:'nurturing',handed_over:'booked'};
+    const btns = document.querySelectorAll('.fbtn');
+    btns.forEach(b=>b.classList.remove('active'));
+    const key = map[state]||'all';
+    const target = Array.from(btns).find(b=>b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+key+"'"));
+    if(target){ target.classList.add('active'); applyFilter(key); }
+  }, 50);
+}
+
+// ── Pipeline filter ───────────────────────────────────────────────────────────
+function filterPipeline(btn, f){
   document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  applyFilter(f);
+}
+function applyFilter(f){
   document.querySelectorAll('#pipeline-tbody tr').forEach(row=>{
     if(f==='all'){row.style.display='';return;}
-    const show=(f==='nurturing'&&row.dataset.state==='ai_nurturing')
+    const show = (f==='nurturing'&&row.dataset.state==='ai_nurturing')
       ||(f==='booked'&&row.dataset.booked==='y')
       ||(f==='hot'&&row.dataset.hot==='y');
-    row.style.display=show?'':'none';
+    row.style.display = show ? '' : 'none';
   });
 }
 
+// ── Chat ──────────────────────────────────────────────────────────────────────
 function openChat(phone){
-  activePhone=phone;
-  const conv=convData[phone];
-  if(!conv)return;
+  activePhone = phone;
+  const conv = convData[phone];
+  if (!conv) return;
+  // Initialise server length tracker so we don't re-show old messages
+  serverHistoryLen[phone] = (conv.history||[]).length;
+
   document.querySelectorAll('.ll-item').forEach(e=>e.classList.remove('active'));
-  const li=document.getElementById('li-'+phone);
-  if(li)li.classList.add('active');
-  document.getElementById('no-chat').style.display='none';
-  const wrap=document.getElementById('chat-active');
-  wrap.style.display='flex';
-  document.getElementById('c-av').textContent=(conv.name||phone)[0].toUpperCase();
-  document.getElementById('c-name').textContent=conv.name||('Lead +'+phone);
-  document.getElementById('c-sub').textContent='+'+phone+' · '+(conv.language||'').replace(/^\w/,c=>c.toUpperCase())+' · '+(conv.history||[]).length+' messages';
-  const badges=document.getElementById('c-badges');
-  badges.innerHTML='';
-  if(isHot(conv)) badges.innerHTML+='<span class="badge b-red">HOT</span>';
-  badges.innerHTML+=statusBadge(conv);
-  if(conv.budget) badges.innerHTML+=`<span class="badge b-gold">${conv.budget.replace(' OMR','')} OMR</span>`;
-  const ds=document.getElementById('c-details');
-  ds.innerHTML=[
-    conv.name?`<div class="ds-item"><div class="ds-label">Name</div><div class="ds-val">${esc(conv.name)}</div></div>`:'',
-    conv.budget?`<div class="ds-item"><div class="ds-label">Budget</div><div class="ds-val">${esc(conv.budget)}</div></div>`:'',
-    conv.property_type?`<div class="ds-item"><div class="ds-label">Property</div><div class="ds-val">${cap(conv.property_type)}</div></div>`:'',
-    conv.timeline?`<div class="ds-item"><div class="ds-label">Timeline</div><div class="ds-val">${esc(conv.timeline)}</div></div>`:'',
+  const li = document.getElementById('li-'+phone);
+  if (li) li.classList.add('active');
+
+  document.getElementById('no-chat').style.display = 'none';
+  const wrap = document.getElementById('chat-active');
+  wrap.style.display = 'flex';
+
+  document.getElementById('c-av').textContent = (conv.name||phone)[0].toUpperCase();
+  document.getElementById('c-name').textContent = conv.name || ('Lead +'+phone);
+  document.getElementById('c-sub').textContent = '+'+phone+' · '+(conv.language||'').replace(/^\w/,c=>c.toUpperCase())+' · '+(conv.history||[]).length+' messages';
+
+  const badges = document.getElementById('c-badges');
+  badges.innerHTML = '';
+  if (isHot(conv)) badges.innerHTML += '<span class="badge b-red">HOT</span>';
+  badges.innerHTML += statusBadge(conv);
+  if (conv.budget) badges.innerHTML += `<span class="badge b-gold">${conv.budget.replace(' OMR','')} OMR</span>`;
+
+  const ds = document.getElementById('c-details');
+  ds.innerHTML = [
+    conv.name        ? `<div class="ds-item"><div class="ds-label">Name</div><div class="ds-val">${esc(conv.name)}</div></div>` : '',
+    conv.budget      ? `<div class="ds-item"><div class="ds-label">Budget</div><div class="ds-val">${esc(conv.budget)}</div></div>` : '',
+    conv.property_type ? `<div class="ds-item"><div class="ds-label">Property</div><div class="ds-val">${cap(conv.property_type)}</div></div>` : '',
+    conv.timeline    ? `<div class="ds-item"><div class="ds-label">Timeline</div><div class="ds-val">${esc(conv.timeline)}</div></div>` : '',
     `<div class="ds-item"><div class="ds-label">Source</div><div class="ds-val">${conv.source==='web_form'?'Web Form':'WhatsApp'}</div></div>`,
     `<div class="ds-item"><div class="ds-label">Lang</div><div class="ds-val">${cap(conv.language)}</div></div>`,
-    conv.booked_slot?`<div class="ds-item"><div class="ds-label">Booked Slot</div><div class="ds-val" style="color:var(--green)">${esc(conv.booked_slot)}</div></div>`:'',
   ].join('');
-  // Update book button state
-  const bookBtn=document.getElementById('btn-book');
-  if(conv.booking_confirmed||conv.state==='booking_slots_sent'){
-    bookBtn.disabled=true;
-    bookBtn.textContent=conv.booking_confirmed?'✓ Viewing Booked':'📅 Slots Sent…';
-  } else {
-    bookBtn.disabled=false;
-    bookBtn.textContent='📅 Send Booking Request';
-  }
-  document.getElementById('reply-input').placeholder=conv.name?`Message ${conv.name}…`:'Type your message…';
+
   renderChatMessages(phone);
+  document.getElementById('reply-input').placeholder = conv.name ? `Message ${conv.name}…` : 'Type your message…';
 }
 
 function renderChatMessages(phone){
-  const conv=convData[phone];
-  if(!conv)return;
-  const msgs=document.getElementById('c-msgs');
-  const hist=conv.history||[];
-  if(!hist.length){
-    msgs.innerHTML='<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:2rem">No messages yet.</div>';
+  const conv = convData[phone];
+  if (!conv) return;
+  const msgs = document.getElementById('c-msgs');
+  const hist = conv.history || [];
+  if (!hist.length){
+    msgs.innerHTML = '<div class="no-msgs-placeholder" style="text-align:center;color:var(--text-muted);font-size:12px;padding:2rem">No messages yet.</div>';
     return;
   }
-  msgs.innerHTML='';
-  hist.forEach(m=>{
-    const roleLabel=m.role==='user'?'Lead':m.role==='bot'?'PropertyIQ Bot':'Agent';
-    const div=document.createElement('div');
-    div.className='msg '+m.role;
-    div.innerHTML=`<div class="msg-role">${roleLabel}</div><div class="msg-bubble">${esc(m.text)}</div><div class="msg-time">${m.time||''}</div>`;
+  msgs.innerHTML = '';
+  hist.forEach(m => {
+    const roleLabel = m.role==='user' ? 'Lead' : m.role==='bot' ? 'PropertyIQ Bot' : 'Agent';
+    const div = document.createElement('div');
+    div.className = 'msg '+m.role;
+    div.innerHTML = `<div class="msg-role">${roleLabel}</div><div class="msg-bubble">${esc(m.text)}</div><div class="msg-time">${m.time}</div>`;
     msgs.appendChild(div);
   });
   setTimeout(()=>{msgs.scrollTop=msgs.scrollHeight;},30);
@@ -450,135 +641,146 @@ function handleEnter(e){
 }
 
 function sendMsg(){
-  if(!activePhone)return;
-  const input=document.getElementById('reply-input');
-  const btn=document.getElementById('btn-send');
-  const ok=document.getElementById('send-ok');
-  const msg=input.value.trim();
-  if(!msg)return;
-  btn.disabled=true;btn.textContent='Sending…';
-  const fd=new FormData();
-  fd.append('phone',activePhone);
-  fd.append('message',msg);
-  fd.append('key',DASHBOARD_KEY);
-  fetch('/agent/send',{method:'POST',body:fd})
+  if (!activePhone) return;
+  const input = document.getElementById('reply-input');
+  const btn   = document.getElementById('btn-send');
+  const ok    = document.getElementById('send-ok');
+  const msg   = input.value.trim();
+  if (!msg) return;
+
+  btn.disabled = true; btn.textContent = 'Sending…';
+
+  const fd = new FormData();
+  fd.append('phone', activePhone);
+  fd.append('message', msg);
+  fd.append('key', DASHBOARD_KEY);
+
+  fetch('/agent/send', {method:'POST', body:fd})
     .then(r=>r.json())
     .then(data=>{
-      if(data.success){
-        ok.style.display='block';setTimeout(()=>{ok.style.display='none';},3000);
-        input.value='';
-        const msgs=document.getElementById('c-msgs');
-        const now=new Date();
-        const t=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
-        const div=document.createElement('div');
-        div.className='msg agent';
-        div.innerHTML=`<div class="msg-role">Agent</div><div class="msg-bubble">${esc(msg)}</div><div class="msg-time">${t}</div>`;
-        // Remove "no messages" placeholder
-        const placeholder=msgs.querySelector('div[style*="text-align:center"]');
-        if(placeholder)placeholder.remove();
-        msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
-        if(!convData[activePhone].history)convData[activePhone].history=[];
-        convData[activePhone].history.push({role:'agent',text:msg,time:t});
-      } else { alert('Failed to send. Check WhatsApp connection.'); }
+      if (data.success){
+        ok.style.display='block'; setTimeout(()=>{ok.style.display='none';},3000);
+        input.value = '';
+        // Sync history from server response so our local copy is authoritative
+        if (data.history && data.history.length){
+          if (!convData[activePhone]) convData[activePhone] = {};
+          convData[activePhone].history = data.history;
+          // Re-render all messages from server truth
+          renderChatMessages(activePhone);
+        } else {
+          // Fallback: append locally
+          const msgs = document.getElementById('c-msgs');
+          const now = new Date();
+          const t = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+          const div = document.createElement('div');
+          div.className = 'msg agent';
+          div.innerHTML = `<div class="msg-role">Agent</div><div class="msg-bubble">${esc(msg)}</div><div class="msg-time">${t}</div>`;
+          msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+        }
+      } else { alert('Failed to send. Check your WhatsApp connection.'); }
     })
     .catch(()=>alert('Network error. Try again.'))
     .finally(()=>{btn.disabled=false;btn.textContent='Send';});
 }
 
-function sendBooking(){
-  if(!activePhone)return;
-  const btn=document.getElementById('btn-book');
-  const confirm=document.getElementById('booking-confirm');
-  btn.disabled=true;btn.textContent='Sending…';
-  const fd=new FormData();
-  fd.append('phone',activePhone);
-  fd.append('key',DASHBOARD_KEY);
-  fetch('/agent/book',{method:'POST',body:fd})
-    .then(r=>r.json())
-    .then(data=>{
-      if(data.success){
-        confirm.style.display='block';
-        btn.textContent='📅 Slots Sent…';
-        setTimeout(()=>{confirm.style.display='none';},4000);
-        // Refresh to show slot message in chat
-        setTimeout(fetchAndRender, 1000);
-      } else {
-        btn.disabled=false;
-        btn.textContent='📅 Send Booking Request';
-        alert('Failed to send booking slots.');
-      }
-    })
-    .catch(()=>{
-      btn.disabled=false;
-      btn.textContent='📅 Send Booking Request';
-      alert('Network error.');
-    });
-}
-
+// ── Helpers ──────────────────────────────────────────────────────────────────
 function setRefreshTime(){
-  const now=new Date();
-  const el=document.getElementById('last-refresh');
-  if(el)el.textContent='Updated '+now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+':'+now.getSeconds().toString().padStart(2,'0');
+  const now = new Date();
+  const el = document.getElementById('last-refresh');
+  if (el) el.textContent = 'Updated '+now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+':'+now.getSeconds().toString().padStart(2,'0');
 }
 
-async function fetchAndRender(){
-  try{
-    const res=await fetch('/api/conversations?key='+encodeURIComponent(DASHBOARD_KEY));
-    if(!res.ok){console.warn('API returned',res.status);return;}
-    const fresh=await res.json();
+// Track server-side history lengths separately from local convData
+// so agent-sent messages don't confuse the diff logic
+const serverHistoryLen = {};
 
-    // Track new messages in open chat
-    let openNewMsgs=[];
-    if(activePhone&&fresh[activePhone]){
-      const oldLen=(convData[activePhone]?.history||[]).length;
-      const newLen=(fresh[activePhone].history||[]).length;
-      if(newLen>oldLen) openNewMsgs=fresh[activePhone].history.slice(oldLen);
+function appendNewMessages(phone, newMsgs){
+  if (!newMsgs.length) return;
+  const msgBox = document.getElementById('c-msgs');
+  // Remove "no messages" placeholder
+  const placeholder = msgBox.querySelector('.no-msgs-placeholder');
+  if (placeholder) placeholder.remove();
+  newMsgs.forEach(m => {
+    const roleLabel = m.role==='user' ? 'Lead' : m.role==='bot' ? 'PropertyIQ Bot' : 'Agent';
+    const div = document.createElement('div');
+    div.className = 'msg '+m.role;
+    div.innerHTML = `<div class="msg-role">${roleLabel}</div><div class="msg-bubble">${esc(m.text)}</div><div class="msg-time">${m.time||''}</div>`;
+    msgBox.appendChild(div);
+  });
+  msgBox.scrollTop = msgBox.scrollHeight;
+  // Update header count
+  const sub = document.getElementById('c-sub');
+  if (sub && convData[phone]) sub.textContent = '+'+phone+' · '+(convData[phone].language||'').replace(/^\w/,c=>c.toUpperCase())+' · '+(convData[phone].history||[]).length+' messages';
+}
+
+// ── Fast poll: just the open conversation's history every 5s ─────────────────
+async function pollActiveChat(){
+  if (!activePhone) return;
+  try {
+    const res = await fetch(`/api/history/${activePhone}?key=${encodeURIComponent(DASHBOARD_KEY)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    const freshHistory = data.history || [];
+    const knownLen = serverHistoryLen[activePhone] || 0;
+
+    if (freshHistory.length > knownLen){
+      const newMsgs = freshHistory.slice(knownLen);
+      serverHistoryLen[activePhone] = freshHistory.length;
+      // Update local convData
+      if (!convData[activePhone]) convData[activePhone] = {};
+      convData[activePhone].history = freshHistory;
+      convData[activePhone].state = data.state;
+      convData[activePhone].booking_confirmed = data.booking_confirmed;
+      appendNewMessages(activePhone, newMsgs);
+      // Refresh status badge
+      const badges = document.getElementById('c-badges');
+      if (badges && convData[activePhone]){
+        const conv = convData[activePhone];
+        badges.innerHTML = '';
+        if (isHot(conv)) badges.innerHTML += '<span class="badge b-red">HOT</span>';
+        badges.innerHTML += statusBadge(conv);
+        if (conv.budget) badges.innerHTML += `<span class="badge b-gold">${conv.budget.replace(' OMR','')} OMR</span>`;
+      }
     }
+  } catch(e){ console.warn('pollActiveChat error:', e); }
+}
 
-    convData=fresh;
+// ── Slow poll: full conversations every 15s for sidebar/tables ───────────────
+async function fetchAndRender(){
+  try {
+    const res = await fetch('/api/conversations?key='+encodeURIComponent(DASHBOARD_KEY));
+    if (!res.ok){ console.warn('API returned', res.status); return; }
+    const fresh = await res.json();
+
+    // Update serverHistoryLen for all conversations from this fresh snapshot
+    // but don't go backwards (local sends may have already advanced the counter)
+    Object.keys(fresh).forEach(phone => {
+      const freshLen = (fresh[phone].history||[]).length;
+      if (!serverHistoryLen[phone] || freshLen > serverHistoryLen[phone]){
+        serverHistoryLen[phone] = freshLen;
+      }
+    });
+
+    convData = fresh;
     renderAll();
     setRefreshTime();
 
-    if(activePhone&&openNewMsgs.length>0){
-      const msgBox=document.getElementById('c-msgs');
-      const placeholder=msgBox.querySelector('div[style*="text-align:center"]');
-      if(placeholder)msgBox.innerHTML='';
-      openNewMsgs.forEach(m=>{
-        const roleLabel=m.role==='user'?'Lead':m.role==='bot'?'PropertyIQ Bot':'Agent';
-        const div=document.createElement('div');
-        div.className='msg '+m.role;
-        div.innerHTML=`<div class="msg-role">${roleLabel}</div><div class="msg-bubble">${esc(m.text)}</div><div class="msg-time">${m.time||''}</div>`;
-        msgBox.appendChild(div);
-      });
-      msgBox.scrollTop=msgBox.scrollHeight;
-      // Update sub text
-      const sub=document.getElementById('c-sub');
-      if(sub)sub.textContent='+'+activePhone+' · '+(convData[activePhone].language||'').replace(/^\w/,c=>c.toUpperCase())+' · '+(convData[activePhone].history||[]).length+' messages';
-      // Update book button if state changed
-      const conv=convData[activePhone];
-      if(conv){
-        const bookBtn=document.getElementById('btn-book');
-        if(conv.booking_confirmed){
-          bookBtn.disabled=true;bookBtn.textContent='✓ Viewing Booked';
-        } else if(conv.state==='booking_slots_sent'){
-          bookBtn.disabled=true;bookBtn.textContent='📅 Slots Sent…';
-        }
-      }
-    }
-  }catch(e){console.warn('fetchAndRender error:',e);}
+  } catch(e){ console.warn('fetchAndRender error:', e); }
 }
 
-// Countdown
-let countdown=15;
+// ── Countdown display ─────────────────────────────────────────────────────────
+let countdown = 15;
+const cdEl = document.getElementById('countdown');
 setInterval(()=>{
   countdown--;
-  const el=document.getElementById('countdown');
-  if(el)el.textContent=countdown;
-  if(countdown<=0)countdown=15;
-},1000);
+  if (cdEl) cdEl.textContent = countdown;
+  if (countdown <= 0) countdown = 15;
+}, 1000);
 
+// ── Boot ──────────────────────────────────────────────────────────────────────
 fetchAndRender();
-setInterval(fetchAndRender,15000);
+setInterval(fetchAndRender, 15000);   // full refresh every 15s
+setInterval(pollActiveChat, 5000);    // active chat refresh every 5s
 </script>
 </body>
 </html>

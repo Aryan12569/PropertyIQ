@@ -642,12 +642,19 @@ def agent_send():
     message   = request.form.get("message","").strip()
     if not phone_raw or not message:
         return jsonify({"success":False}), 400
-    success = send_whatsapp_text(phone_raw, message)
-    phone   = normalize_phone(phone_raw)
+
+    # normalize_phone handles both raw (+96878...) and already-normalized keys
+    phone = normalize_phone(phone_raw)
+    success = send_whatsapp_text(phone, message)
+
+    # Always add to history and mark handed_over, even if WA send fails in demo
+    add_to_history(phone, "agent", message)
     if phone in conversations:
-        add_to_history(phone, "agent", message)
         conversations[phone]["state"] = "handed_over"
-    return jsonify({"success": success})
+
+    # Return updated history so dashboard can sync immediately
+    history = conversations.get(phone, {}).get("history", [])
+    return jsonify({"success": success, "history": history})
 
 @app.route("/static/brochures/<filename>")
 def serve_brochure(filename):
@@ -719,6 +726,26 @@ RULES:
     except Exception as e:
         print(f"Chat demo ERROR: {e}")
         return jsonify({"error": "AI unavailable"}), 500
+
+@app.route("/api/history/<phone>")
+def api_history(phone):
+    """Returns just the history for one conversation — polled every 5s when chat is open."""
+    if request.args.get("key","") != AGENT_DASHBOARD_KEY:
+        return jsonify({"error":"forbidden"}), 403
+    key = normalize_phone(phone)
+    conv = conversations.get(key)
+    if not conv:
+        return jsonify({"history":[], "state":"new", "booking_confirmed":False})
+    return jsonify({
+        "history": conv.get("history", []),
+        "state": conv.get("state"),
+        "booking_confirmed": conv.get("booking_confirmed", False),
+        "name": conv.get("name"),
+        "budget": conv.get("budget"),
+        "property_type": conv.get("property_type"),
+        "timeline": conv.get("timeline"),
+        "language": conv.get("language"),
+    })
 
 @app.route("/debug")
 def debug():
