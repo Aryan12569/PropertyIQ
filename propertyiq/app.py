@@ -1,8 +1,9 @@
 import os
 import json
-import requests
 import re
-from datetime import datetime, timedelta
+import threading
+import requests
+from datetime import datetime
 from flask import Flask, request, jsonify, render_template, redirect, url_for, send_from_directory
 from dotenv import load_dotenv
 
@@ -28,44 +29,72 @@ except ImportError:
 
 app = Flask(__name__)
 
-# ── CORS ──────────────────────────────────────────────────────────────────────
-@app.after_request
-def add_cors(response):
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-    return response
+# ─── Config ───────────────────────────────────────────────────────────────────
+GROQ_API_KEY         = os.getenv("GROQ_API_KEY", "")
+WA_PHONE_NUMBER_ID   = os.getenv("WA_PHONE_NUMBER_ID", "")
+WA_ACCESS_TOKEN      = os.getenv("WA_ACCESS_TOKEN", "")
+AGENT_WHATSAPP       = os.getenv("AGENT_WHATSAPP", "")
+NOTION_TOKEN         = os.getenv("NOTION_TOKEN", "")
+NOTION_DB_ID         = os.getenv("NOTION_DB_ID", "")
+SPREADSHEET_ID       = os.getenv("SPREADSHEET_ID", "")
+GOOGLE_CREDS_JSON    = os.getenv("GOOGLE_CREDS_JSON", "")
+VERIFY_TOKEN         = os.getenv("VERIFY_TOKEN", "propertyiq2025")
+RENDER_URL           = os.getenv("RENDER_URL", "https://propertyiq-q0ka.onrender.com")
+AGENT_DASHBOARD_KEY  = os.getenv("AGENT_DASHBOARD_KEY", "alnoor2025")
+# Agent creates this once at calendar.google.com → Appointment Schedules → share URL
+CALENDAR_BOOKING_URL = os.getenv("CALENDAR_BOOKING_URL", "")
 
-@app.route("/chat", methods=["OPTIONS"])
-def chat_preflight():
-    return "", 204
-
-# ── Config ────────────────────────────────────────────────────────────────────
-GROQ_API_KEY        = os.getenv("GROQ_API_KEY", "")
-WA_PHONE_NUMBER_ID  = os.getenv("WA_PHONE_NUMBER_ID", "")
-WA_ACCESS_TOKEN     = os.getenv("WA_ACCESS_TOKEN", "")
-AGENT_WHATSAPP      = os.getenv("AGENT_WHATSAPP", "")
-NOTION_TOKEN        = os.getenv("NOTION_TOKEN", "")
-NOTION_DB_ID        = os.getenv("NOTION_DB_ID", "")
-SPREADSHEET_ID      = os.getenv("SPREADSHEET_ID", "")
-GOOGLE_CREDS_JSON   = os.getenv("GOOGLE_CREDS_JSON", "")
-VERIFY_TOKEN        = os.getenv("VERIFY_TOKEN", "propertyiq2025")
-RENDER_URL          = os.getenv("RENDER_URL", "https://propertyiq-q0ka.onrender.com")
-AGENT_DASHBOARD_KEY = os.getenv("AGENT_DASHBOARD_KEY", "alnoor2025")
-
-# ── In-memory store ───────────────────────────────────────────────────────────
+# ─── Persistence ──────────────────────────────────────────────────────────────
+CONV_FILE  = "/tmp/propertyiq_convs.json"
+_conv_lock = threading.Lock()
 conversations = {}
 
+def _save():
+    """Write conversations to disk. Called after every mutation."""
+    try:
+        with _conv_lock:
+            with open(CONV_FILE, "w", encoding="utf-8") as f:
+                json.dump(conversations, f, ensure_ascii=False, default=str)
+    except Exception as e:
+        print(f"[SAVE] {e}")
+
+def _load():
+    """Load conversations from disk on startup."""
+    global conversations
+    try:
+        if os.path.exists(CONV_FILE):
+            with open(CONV_FILE, "r", encoding="utf-8") as f:
+                conversations = json.load(f)
+            print(f"[LOAD] Restored {len(conversations)} conversations")
+    except Exception as e:
+        print(f"[LOAD] {e}")
+        conversations = {}
+
+# ─── Properties ───────────────────────────────────────────────────────────────
 PROPERTIES = [
-    {"id":"mb_2br","name":"Muscat Bay — 2BR Apartment","type":"apartment_small","price":85000,"size":"120 sqm","floor":"4th Floor","features":["Direct sea view","Private balcony","Fully fitted kitchen","2 parking spaces","Pool and gym"],"status":"Available","handover":"Q2 2025","filename":"muscat_bay_2br.pdf"},
-    {"id":"mb_3br","name":"Muscat Bay — 3BR Apartment","type":"apartment_large","price":130000,"size":"180 sqm","floor":"7th Floor","features":["Panoramic sea and mountain view","Maid room","Smart home system","2 parking spaces","Rooftop pool"],"status":"Available","handover":"Q2 2025","filename":"muscat_bay_3br.pdf"},
-    {"id":"am_2br","name":"Al Mouj — 2BR Apartment","type":"apartment_small","price":95000,"size":"135 sqm","floor":"3rd Floor","features":["Golf course view","Italian marble kitchen","Oak flooring","1 parking space","Beach club access"],"status":"Last 2 units","handover":"Ready now","filename":"al_mouj_2br.pdf"},
-    {"id":"am_villa","name":"Al Mouj — 4BR Villa","type":"villa","price":285000,"size":"380 sqm","floor":"Plot 500 sqm","features":["Private swimming pool","3-car garage","Smart home","Landscaped garden","Direct beach access"],"status":"1 unit only","handover":"Ready now","filename":"al_mouj_villa.pdf"},
-    {"id":"tw_studio","name":"The Wave — 1BR Studio","type":"studio","price":55000,"size":"75 sqm","floor":"2nd Floor","features":["Marina view","Full furniture package option","Rental permit available","Hotel-managed option"],"status":"Available","handover":"Q1 2025","filename":"the_wave_studio.pdf"},
+    {"id":"mb_2br","name":"Muscat Bay — 2BR Apartment","type":"apartment_small","price":85000,
+     "size":"120 sqm","floor":"4th Floor",
+     "features":["Direct sea view","Private balcony","Fully fitted kitchen","2 parking spaces","Pool and gym"],
+     "status":"Available","handover":"Q2 2025","filename":"muscat_bay_2br.pdf"},
+    {"id":"mb_3br","name":"Muscat Bay — 3BR Apartment","type":"apartment_large","price":130000,
+     "size":"180 sqm","floor":"7th Floor",
+     "features":["Panoramic sea and mountain view","Maid room","Smart home system","2 parking spaces","Rooftop pool"],
+     "status":"Available","handover":"Q2 2025","filename":"muscat_bay_3br.pdf"},
+    {"id":"am_2br","name":"Al Mouj — 2BR Apartment","type":"apartment_small","price":95000,
+     "size":"135 sqm","floor":"3rd Floor",
+     "features":["Golf course view","Italian marble kitchen","Oak flooring","1 parking space","Beach club access"],
+     "status":"Last 2 units","handover":"Ready now","filename":"al_mouj_2br.pdf"},
+    {"id":"am_villa","name":"Al Mouj — 4BR Villa","type":"villa","price":285000,
+     "size":"380 sqm","floor":"Plot 500 sqm",
+     "features":["Private swimming pool","3-car garage","Smart home","Landscaped garden","Direct beach access"],
+     "status":"1 unit only","handover":"Ready now","filename":"al_mouj_villa.pdf"},
+    {"id":"tw_studio","name":"The Wave — 1BR Studio","type":"studio","price":55000,
+     "size":"75 sqm","floor":"2nd Floor",
+     "features":["Marina view","Full furniture package option","Rental permit available","Hotel-managed option"],
+     "status":"Available","handover":"Q1 2025","filename":"the_wave_studio.pdf"},
 ]
 
-# ── Utilities ─────────────────────────────────────────────────────────────────
-
+# ─── Utilities ────────────────────────────────────────────────────────────────
 def normalize_phone(raw):
     digits = re.sub(r'\D', '', str(raw))
     if digits.startswith('00'):
@@ -87,17 +116,16 @@ def get_conversation(phone):
             "timeline": None,
             "history": [],
             "booking_confirmed": False,
+            "booking_link_sent": False,
             "source": "whatsapp",
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "email": None,
-            "phone": key,
-            "viewing_slots": [],
-            "chosen_slot": None,
-            "calendar_url": "",
         }
+        _save()
     return conversations[key]
 
 def add_to_history(phone, role, text):
+    """Add a message to conversation history and persist immediately."""
     key = normalize_phone(phone)
     conv = get_conversation(key)
     conv["history"].append({
@@ -105,89 +133,101 @@ def add_to_history(phone, role, text):
         "text": text,
         "time": datetime.now().strftime("%H:%M")
     })
+    _save()
 
-# ── Viewing slot helpers ──────────────────────────────────────────────────────
-
-def generate_viewing_slots():
-    slots = []
-    base  = datetime.now() + timedelta(days=1)
-    times = [(10, 0), (14, 0), (16, 30)]
-    count = 0
-    day_offset = 0
-    while count < 3:
-        candidate = base + timedelta(days=day_offset)
-        if candidate.weekday() < 5:
-            h, m = times[count]
-            slot = candidate.replace(hour=h, minute=m, second=0, microsecond=0)
-            slots.append(slot.isoformat())
-            count += 1
-        day_offset += 1
-    return slots
-
-def format_slots_message(slots, language="english"):
-    lines = []
-    for i, iso in enumerate(slots, 1):
-        dt = datetime.fromisoformat(iso)
-        formatted = dt.strftime("%A, %d %B · %I:%M %p")
-        lines.append(f"{i}️⃣  {formatted}")
-    if language == "arabic":
-        header = "ممتاز! 🎉 اختر وقت الزيارة المناسب لك:\n\n"
-        footer  = "\n\nردّ برقم لتأكيد موعدك."
-    else:
-        header = "Excellent! 🎉 Please choose a viewing time that works for you:\n\n"
-        footer  = "\n\nReply with a number to confirm your slot."
-    return header + "\n".join(lines) + footer
-
-def build_google_calendar_link(conv, slot_iso):
-    try:
-        start = datetime.fromisoformat(slot_iso)
-        end   = start + timedelta(hours=1)
-        fmt   = "%Y%m%dT%H%M%S"
-        title = f"Property Viewing – {conv.get('name','Lead')} – {conv.get('property_type','').replace('_',' ').title()}"
-        details = (
-            f"Lead: {conv.get('name','Unknown')}\n"
-            f"Phone: +{conv.get('phone','')}\n"
-            f"Budget: {conv.get('budget','')}\n"
-            f"Property Interest: {conv.get('property_type','').replace('_',' ').title()}\n"
-            f"Timeline: {conv.get('timeline','')}\n"
-            f"Booked via PropertyIQ"
-        )
-        location = "Al Noor Properties, Muscat, Oman"
-        params = (
-            f"action=TEMPLATE"
-            f"&text={requests.utils.quote(title)}"
-            f"&dates={start.strftime(fmt)}/{end.strftime(fmt)}"
-            f"&details={requests.utils.quote(details)}"
-            f"&location={requests.utils.quote(location)}"
-        )
-        return f"https://calendar.google.com/calendar/render?{params}"
-    except Exception as e:
-        print(f"Calendar link ERROR: {e}")
-        return ""
-
-# ── Message Templates ─────────────────────────────────────────────────────────
-
+# ─── Message Templates ────────────────────────────────────────────────────────
 MESSAGES = {
     "english": {
-        "welcome":      "Hello! Welcome to Al Noor Properties 🏠\n\nI'm PropertyIQ, your personal property assistant. I'll help you find the perfect property in Muscat in just a few quick questions.\n\nMay I know your name?",
-        "ask_type":     "Thank you, {name}! 😊\n\nWhat type of property are you looking for?\n\n1️⃣  Apartment — 1 to 2 bedrooms\n2️⃣  Apartment — 3 or more bedrooms\n3️⃣  Villa\n4️⃣  Studio\n\nReply with a number or describe what you need.",
-        "ask_budget":   "What is your budget range?\n\n1️⃣  Under 60,000 OMR\n2️⃣  60,000 – 90,000 OMR\n3️⃣  90,000 – 130,000 OMR\n4️⃣  130,000 – 200,000 OMR\n5️⃣  Above 200,000 OMR\n\nReply with a number.",
-        "ask_timeline": "Almost done! When are you planning to make a purchase?\n\n1️⃣  Immediately\n2️⃣  Within 3 months\n3️⃣  Within 6 months\n4️⃣  Just exploring for now\n\nReply with a number.",
-        "unclear":      "I didn't quite catch that. Could you reply with one of the numbered options above? 😊",
-        "ai_error":     "Thank you for your message! Our specialist Ahmed Al-Balushi will be in touch with you very shortly 🙏",
+        "welcome":
+            "Hello! Welcome to Al Noor Properties 🏠\n\n"
+            "I'm PropertyIQ, your personal property assistant. I'll help you find the "
+            "perfect property in Muscat in just a few quick questions.\n\n"
+            "May I know your name?",
+        "ask_type":
+            "Thank you, {name}! 😊\n\n"
+            "What type of property are you looking for?\n\n"
+            "1️⃣  Apartment — 1 to 2 bedrooms\n"
+            "2️⃣  Apartment — 3 or more bedrooms\n"
+            "3️⃣  Villa\n"
+            "4️⃣  Studio\n\n"
+            "Reply with a number or describe what you need.",
+        "ask_budget":
+            "What is your budget range?\n\n"
+            "1️⃣  Under 60,000 OMR\n"
+            "2️⃣  60,000 – 90,000 OMR\n"
+            "3️⃣  90,000 – 130,000 OMR\n"
+            "4️⃣  130,000 – 200,000 OMR\n"
+            "5️⃣  Above 200,000 OMR\n\n"
+            "Reply with a number.",
+        "ask_timeline":
+            "Almost done! When are you planning to make a purchase?\n\n"
+            "1️⃣  Immediately\n"
+            "2️⃣  Within 3 months\n"
+            "3️⃣  Within 6 months\n"
+            "4️⃣  Just exploring for now\n\n"
+            "Reply with a number.",
+        "unclear":
+            "I didn't quite catch that. Could you reply with one of the numbered options above? 😊",
+        "booking_signoff":
+            "\n\nExcellent! 🎉 Our specialist *Ahmed Al-Balushi* will personally reach "
+            "out to confirm your appointment.\n\n"
+            "Ahmed Al-Balushi | Al Noor Properties | +968 9123 4567",
+        "booking_link":
+            "📅 *Book Your Private Viewing*\n\n"
+            "Click the link below to choose a date and time that works best for you. "
+            "The appointment will be confirmed instantly and added to both our calendars.\n\n"
+            "{url}\n\n"
+            "— Ahmed Al-Balushi | Al Noor Properties | +968 9123 4567",
+        "ai_error":
+            "Thank you for your message! Our specialist Ahmed Al-Balushi will be in touch "
+            "with you very shortly 🙏",
     },
     "arabic": {
-        "welcome":      "أهلاً وسهلاً! مرحباً بك في عقارات النور 🏠\n\nأنا PropertyIQ، مساعدك العقاري الشخصي. راح أساعدك تلقى العقار المثالي في مسقط بأسئلة بسيطة وسريعة.\n\nممكن أعرف اسمك؟",
-        "ask_type":     "شكراً {name}! 😊\n\nوش نوع العقار اللي تبحث عنه؟\n\n1️⃣  شقة صغيرة — غرفة أو غرفتين\n2️⃣  شقة كبيرة — ٣ غرف وأكثر\n3️⃣  فيلا\n4️⃣  استوديو\n\nردّ برقم أو وصف اللي تبحث عنه.",
-        "ask_budget":   "وش هي ميزانيتك تقريباً؟\n\n1️⃣  أقل من ٦٠٬٠٠٠ ريال عماني\n2️⃣  ٦٠٬٠٠٠ – ٩٠٬٠٠٠ ريال عماني\n3️⃣  ٩٠٬٠٠٠ – ١٣٠٬٠٠٠ ريال عماني\n4️⃣  ١٣٠٬٠٠٠ – ٢٠٠٬٠٠٠ ريال عماني\n5️⃣  أكثر من ٢٠٠٬٠٠٠ ريال عماني\n\nردّ برقم.",
-        "ask_timeline": "آخر سؤال! متى تخطط تشتري العقار؟\n\n1️⃣  فوري\n2️⃣  خلال ٣ أشهر\n3️⃣  خلال ٦ أشهر\n4️⃣  بس أستكشف الحين\n\nردّ برقم.",
-        "unclear":      "ما فهمت بشكل واضح. ممكن تردّ بأحد الخيارات المرقمة أعلاه؟ 😊",
-        "ai_error":     "شكراً على رسالتك! متخصصنا أحمد البلوشي راح يتواصل معك مباشرة قريباً 🙏",
+        "welcome":
+            "أهلاً وسهلاً! مرحباً بك في عقارات النور 🏠\n\n"
+            "أنا PropertyIQ، مساعدك العقاري الشخصي. راح أساعدك تلقى العقار المثالي "
+            "في مسقط بأسئلة بسيطة وسريعة.\n\n"
+            "ممكن أعرف اسمك؟",
+        "ask_type":
+            "شكراً {name}! 😊\n\n"
+            "وش نوع العقار اللي تبحث عنه؟\n\n"
+            "1️⃣  شقة صغيرة — غرفة أو غرفتين\n"
+            "2️⃣  شقة كبيرة — ٣ غرف وأكثر\n"
+            "3️⃣  فيلا\n"
+            "4️⃣  استوديو\n\n"
+            "ردّ برقم أو وصف اللي تبحث عنه.",
+        "ask_budget":
+            "وش هي ميزانيتك تقريباً؟\n\n"
+            "1️⃣  أقل من ٦٠٬٠٠٠ ريال عماني\n"
+            "2️⃣  ٦٠٬٠٠٠ – ٩٠٬٠٠٠ ريال عماني\n"
+            "3️⃣  ٩٠٬٠٠٠ – ١٣٠٬٠٠٠ ريال عماني\n"
+            "4️⃣  ١٣٠٬٠٠٠ – ٢٠٠٬٠٠٠ ريال عماني\n"
+            "5️⃣  أكثر من ٢٠٠٬٠٠٠ ريال عماني\n\n"
+            "ردّ برقم.",
+        "ask_timeline":
+            "آخر سؤال! متى تخطط تشتري العقار؟\n\n"
+            "1️⃣  فوري\n"
+            "2️⃣  خلال ٣ أشهر\n"
+            "3️⃣  خلال ٦ أشهر\n"
+            "4️⃣  بس أستكشف الحين\n\n"
+            "ردّ برقم.",
+        "unclear":
+            "ما فهمت بشكل واضح. ممكن تردّ بأحد الخيارات المرقمة أعلاه؟ 😊",
+        "booking_signoff":
+            "\n\nممتاز! 🎉 متخصصنا *أحمد البلوشي* راح يتواصل معك شخصياً لتأكيد الموعد.\n\n"
+            "أحمد البلوشي | عقارات النور | +968 9123 4567",
+        "booking_link":
+            "📅 *احجز موعد المشاهدة الخاصة*\n\n"
+            "اضغط الرابط أدناه واختر اليوم والوقت اللي يناسبك. "
+            "سيتم تأكيد الموعد فوراً وإضافته لتقويم الطرفين.\n\n"
+            "{url}\n\n"
+            "— أحمد البلوشي | عقارات النور | ‎+968 9123 4567",
+        "ai_error":
+            "شكراً على رسالتك! متخصصنا أحمد البلوشي راح يتواصل معك مباشرة قريباً 🙏",
     }
 }
 
-# ── Parsers ───────────────────────────────────────────────────────────────────
-
+# ─── Parsers ──────────────────────────────────────────────────────────────────
 def parse_property_type(text):
     t = text.lower().strip()
     if t in ["1","1️⃣"]: return "apartment_small"
@@ -202,9 +242,13 @@ def parse_property_type(text):
 
 def parse_budget(text):
     t = text.lower().strip()
-    bmap = {"1":"Under 60000 OMR","1️⃣":"Under 60000 OMR","2":"60000-90000 OMR","2️⃣":"60000-90000 OMR",
-            "3":"90000-130000 OMR","3️⃣":"90000-130000 OMR","4":"130000-200000 OMR","4️⃣":"130000-200000 OMR",
-            "5":"Above 200000 OMR","5️⃣":"Above 200000 OMR"}
+    bmap = {
+        "1":"Under 60000 OMR","1️⃣":"Under 60000 OMR",
+        "2":"60000-90000 OMR","2️⃣":"60000-90000 OMR",
+        "3":"90000-130000 OMR","3️⃣":"90000-130000 OMR",
+        "4":"130000-200000 OMR","4️⃣":"130000-200000 OMR",
+        "5":"Above 200000 OMR","5️⃣":"Above 200000 OMR",
+    }
     if t in bmap: return bmap[t]
     if any(w in t for w in ["under 60","less than 60","أقل"]): return "Under 60000 OMR"
     if "60" in t and "90" in t: return "60000-90000 OMR"
@@ -215,8 +259,12 @@ def parse_budget(text):
 
 def parse_timeline(text):
     t = text.lower().strip()
-    tmap = {"1":"Immediately","1️⃣":"Immediately","2":"Within 3 months","2️⃣":"Within 3 months",
-            "3":"Within 6 months","3️⃣":"Within 6 months","4":"Just exploring","4️⃣":"Just exploring"}
+    tmap = {
+        "1":"Immediately","1️⃣":"Immediately",
+        "2":"Within 3 months","2️⃣":"Within 3 months",
+        "3":"Within 6 months","3️⃣":"Within 6 months",
+        "4":"Just exploring","4️⃣":"Just exploring",
+    }
     if t in tmap: return tmap[t]
     if any(w in t for w in ["now","immediate","asap","فوري","الحين"]): return "Immediately"
     if "3" in t or "three" in t: return "Within 3 months"
@@ -224,26 +272,13 @@ def parse_timeline(text):
     if any(w in t for w in ["explor","look","أستكشف"]): return "Just exploring"
     return "Within 6 months"
 
-def parse_slot_choice(text, num_slots):
-    t = text.strip()
-    for i in range(1, num_slots + 1):
-        if t in [str(i), f"{i}️⃣"]:
-            return i - 1
-    words = {"one":0,"two":1,"three":2,"first":0,"second":1,"third":2,
-             "١":0,"٢":1,"٣":2,"الأول":0,"الثاني":1,"الثالث":2}
-    for w, idx in words.items():
-        if w in t.lower() and idx < num_slots:
-            return idx
-    return None
-
 def select_property(budget_str, prop_type_str):
-    b  = 0
-    bs = str(budget_str)
-    if "Under" in bs:           b = 55000
-    elif "60000-90000" in bs:   b = 75000
-    elif "90000-130000" in bs:  b = 110000
+    b = 0; bs = str(budget_str)
+    if "Under" in bs: b = 55000
+    elif "60000-90000" in bs: b = 75000
+    elif "90000-130000" in bs: b = 110000
     elif "130000-200000" in bs: b = 165000
-    elif "Above" in bs:         b = 300000
+    elif "Above" in bs: b = 300000
     if prop_type_str == "villa" and b >= 200000:
         return next((p for p in PROPERTIES if p["id"]=="am_villa"), PROPERTIES[0])
     if prop_type_str == "studio" or b <= 60000:
@@ -254,8 +289,7 @@ def select_property(budget_str, prop_type_str):
         return next((p for p in PROPERTIES if p["id"]=="am_2br"), PROPERTIES[0])
     return next((p for p in PROPERTIES if p["id"]=="mb_2br"), PROPERTIES[0])
 
-# ── AI / Groq ─────────────────────────────────────────────────────────────────
-
+# ─── AI / Groq ────────────────────────────────────────────────────────────────
 RECOMMENDATION_PROMPT = """You are PropertyIQ, a premium real estate assistant for Al Noor Properties in Muscat, Oman.
 
 AVAILABLE PROPERTIES:
@@ -270,11 +304,11 @@ RULES:
 - Keep under 120 words. WhatsApp natural paragraphs only.
 - Greet by first name once.
 - Recommend the single best-matching property. Mention brochure has been sent.
-- End with ONE soft question asking if they'd like to arrange a viewing this week.
-- No sign-off line.
+- End with ONE soft question inviting them to ask more or arrange a viewing.
+- No sign-off line — appended separately.
 """
 
-SALES_PROMPT = """You are PropertyIQ, an elite real estate sales closer for Al Noor Properties, Muscat, Oman.
+SALES_PROMPT = """You are PropertyIQ, an elite real estate sales closer for Al Noor Properties, Muscat, Oman. Warm, sharp, consultative and highly persuasive.
 
 PROPERTIES:
 1 | Muscat Bay 2BR | 85,000 OMR | Sea view | Q2 2025
@@ -289,14 +323,14 @@ MISSION: Get the lead to confirm a viewing appointment.
 
 RULES:
 - Respond ENTIRELY in the lead's language. Arabic = Khaleeji Gulf dialect.
-- Max 130 words. Sound human, not like a bot.
+- Max 130 words. Sound like a human consultant, not a bot.
 - Use lead's name naturally once per message.
-- Use scarcity/urgency naturally.
+- Use scarcity/urgency naturally ("only 2 units left", "viewing slots filling up").
 - Handle objections confidently and empathetically.
-- Always end with ONE closing question pushing toward booking a viewing.
-- When the lead clearly agrees to a viewing / says yes to an appointment:
-  respond warmly confirming you will send times, then write [OFFER_SLOTS] on its own line at the very end.
-- Do NOT add any sign-off.
+- Always end with ONE closing question pushing toward booking.
+- When the lead agrees to a viewing or says yes to an appointment: confirm warmly,
+  then write [BOOKING_CONFIRMED] on its own line at the very end. Nothing after it.
+- Do NOT add sign-off — appended separately.
 """
 
 def call_groq(system_prompt, messages_list, max_tokens=350, temperature=0.7):
@@ -315,22 +349,24 @@ def call_groq(system_prompt, messages_list, max_tokens=350, temperature=0.7):
         r = requests.post(url, headers=headers, json=payload, timeout=30)
         r.raise_for_status()
         content = r.json()["choices"][0]["message"]["content"].strip()
-        print(f"Groq OK ({len(content)} chars)")
+        print(f"[GROQ] OK ({len(content)} chars)")
         return content
     except Exception as e:
-        print(f"Groq ERROR: {e}")
+        print(f"[GROQ] ERROR: {e}")
         if hasattr(e, 'response') and e.response is not None:
-            print(f"Groq body: {e.response.text}")
+            print(f"[GROQ] body: {e.response.text}")
         return None
 
 def generate_recommendation(name, budget, prop_type, timeline, language):
-    user_msg = f"LEAD NAME: {name}\nBUDGET: {budget}\nPROPERTY TYPE: {prop_type}\nTIMELINE: {timeline}\nLANGUAGE: {language}\n\nWrite the WhatsApp recommendation now."
+    user_msg = (
+        f"LEAD NAME: {name}\nBUDGET: {budget}\nPROPERTY TYPE: {prop_type}\n"
+        f"TIMELINE: {timeline}\nLANGUAGE: {language}\n\nWrite the WhatsApp recommendation now."
+    )
     result = call_groq(RECOMMENDATION_PROMPT, [{"role": "user", "content": user_msg}], max_tokens=300)
-    if result:
-        return result
+    if result: return result
     if language == "arabic":
         return f"مرحباً {name}، لقينا لك خيار ممتاز يناسب ميزانيتك وأرسلنا لك البروشور الآن. هل تودّ تحديد موعد لزيارة خاصة؟"
-    return f"Hi {name}! We've found a property that's a great match and just sent you the brochure. Would you like to arrange a private viewing this week?"
+    return f"Hi {name}! We've found a property that's a great match for your requirements and just sent you the brochure. Would you like to arrange a private viewing this week?"
 
 def generate_sales_reply(conv, incoming_text):
     lang = conv.get("language", "english")
@@ -342,111 +378,139 @@ def generate_sales_reply(conv, incoming_text):
     )
     groq_msgs.append({"role": "user", "content": profile})
     groq_msgs.append({"role": "assistant", "content": "Got it. Ready to continue the sales conversation."})
-
     history = conv.get("history", [])
     for msg in (history[-20:] if len(history) > 20 else history):
         if msg["role"] == "user":
             groq_msgs.append({"role": "user", "content": msg["text"]})
         elif msg["role"] in ["bot", "agent"]:
             groq_msgs.append({"role": "assistant", "content": msg["text"]})
-
     groq_msgs.append({"role": "user", "content": incoming_text})
     return call_groq(SALES_PROMPT, groq_msgs, max_tokens=350, temperature=0.72)
 
-# ── WhatsApp Senders ──────────────────────────────────────────────────────────
-
+# ─── WhatsApp Senders ─────────────────────────────────────────────────────────
 def send_whatsapp_text(to_number, message_text):
     clean = normalize_phone(to_number)
     if not clean:
-        print(f"Invalid phone: '{to_number}'")
-        return False
+        print(f"[WA] Invalid phone: '{to_number}'"); return False
     if not WA_PHONE_NUMBER_ID or not WA_ACCESS_TOKEN:
-        print(f"[DEMO MODE] → +{clean}: {message_text[:100]}")
-        return True
+        print(f"[WA DEMO] → +{clean}: {message_text[:80]}"); return True
     url = f"https://graph.facebook.com/v19.0/{WA_PHONE_NUMBER_ID}/messages"
     headers = {"Authorization": f"Bearer {WA_ACCESS_TOKEN}", "Content-Type": "application/json"}
-    payload = {"messaging_product":"whatsapp","recipient_type":"individual","to":clean,"type":"text","text":{"preview_url":False,"body":message_text}}
+    payload = {
+        "messaging_product": "whatsapp", "recipient_type": "individual",
+        "to": clean, "type": "text",
+        "text": {"preview_url": False, "body": message_text}
+    }
     try:
         r = requests.post(url, headers=headers, json=payload, timeout=15)
         r.raise_for_status()
-        print(f"WA sent → +{clean}")
+        print(f"[WA] Sent → +{clean}")
         return True
     except Exception as e:
-        print(f"WA ERROR → +{clean}: {e}")
+        print(f"[WA] ERROR → +{clean}: {e}")
         if hasattr(e, 'response') and e.response is not None:
-            print(f"WA body: {e.response.text}")
+            print(f"[WA] body: {e.response.text}")
         return False
 
 def send_whatsapp_document(to_number, pdf_url, filename):
     clean = normalize_phone(to_number)
     if not WA_PHONE_NUMBER_ID or not WA_ACCESS_TOKEN:
-        print(f"[DEMO MODE] Doc '{filename}' → +{clean}")
-        return True
+        print(f"[WA DEMO] Doc '{filename}' → +{clean}"); return True
     url = f"https://graph.facebook.com/v19.0/{WA_PHONE_NUMBER_ID}/messages"
     headers = {"Authorization": f"Bearer {WA_ACCESS_TOKEN}", "Content-Type": "application/json"}
-    payload = {"messaging_product":"whatsapp","recipient_type":"individual","to":clean,"type":"document","document":{"link":pdf_url,"filename":filename}}
+    payload = {
+        "messaging_product": "whatsapp", "recipient_type": "individual",
+        "to": clean, "type": "document",
+        "document": {"link": pdf_url, "filename": filename}
+    }
     try:
         r = requests.post(url, headers=headers, json=payload, timeout=15)
         r.raise_for_status()
+        print(f"[WA] Doc sent → +{clean}")
         return True
     except Exception as e:
-        print(f"WA doc ERROR: {e}")
-        return False
+        print(f"[WA] Doc ERROR: {e}"); return False
 
-def send_agent_alert(conv, phone, alert_type="new", calendar_url=""):
+def send_agent_alert(conv, phone, alert_type="new"):
     if not AGENT_WHATSAPP:
-        print(f"[DEMO] Agent alert ({alert_type}): {conv.get('name')} +{phone}")
-        return
+        print(f"[DEMO] Agent alert ({alert_type}): {conv.get('name')} +{phone}"); return
     is_hot = any(k in str(conv.get("budget","")) for k in ["130000","200000","Above"])
     if alert_type == "booking":
-        header = "🔥 BOOKING CONFIRMED" if is_hot else "✅ BOOKING CONFIRMED"
-        slot_line = f"Slot: {conv.get('chosen_slot','—')}\n"
-        cal_line  = f"📅 Calendar: {calendar_url}\n" if calendar_url else ""
-        footer = f"Viewing booked!\n{slot_line}{cal_line}"
+        header = "🔥 HOT — BOOKING CONFIRMED" if is_hot else "✅ BOOKING CONFIRMED"
+        footer = "Lead confirmed a viewing appointment.\n"
     else:
         header = "🔥 HOT LEAD" if is_hot else "🔔 NEW LEAD"
-        footer = "AI rec + brochure sent. Bot nurturing.\n"
+        footer = "AI rec + brochure sent. Bot is nurturing.\n"
     alert = (
         f"{header} — PropertyIQ\n\n"
         f"Name: {conv.get('name','Unknown')}\nPhone: +{phone}\n"
-        f"Budget: {conv.get('budget','—')}\nProperty: {str(conv.get('property_type','')).replace('_',' ').title()}\n"
-        f"Timeline: {conv.get('timeline','—')}\n\n{footer}"
+        f"Budget: {conv.get('budget','—')}\n"
+        f"Property: {str(conv.get('property_type','')).replace('_',' ').title()}\n"
+        f"Timeline: {conv.get('timeline','—')}\n"
+        f"Language: {'Arabic' if conv.get('language')=='arabic' else 'English'}\n\n"
+        f"{footer}"
         f"📋 Dashboard: {RENDER_URL}/agent?key={AGENT_DASHBOARD_KEY}"
     )
     send_whatsapp_text(AGENT_WHATSAPP, alert)
 
-# ── CRM Logging ───────────────────────────────────────────────────────────────
-
+# ─── CRM Logging ──────────────────────────────────────────────────────────────
 def log_to_sheets(conv, phone, ai_response):
-    if not GSPREAD_AVAILABLE or not GOOGLE_CREDS_JSON or not SPREADSHEET_ID:
-        return
+    if not GSPREAD_AVAILABLE or not GOOGLE_CREDS_JSON or not SPREADSHEET_ID: return
     try:
-        creds = Credentials.from_service_account_info(json.loads(GOOGLE_CREDS_JSON), scopes=["https://www.googleapis.com/auth/spreadsheets","https://www.googleapis.com/auth/drive"])
+        creds = Credentials.from_service_account_info(
+            json.loads(GOOGLE_CREDS_JSON),
+            scopes=["https://www.googleapis.com/auth/spreadsheets","https://www.googleapis.com/auth/drive"]
+        )
         sheet = gspread.authorize(creds).open_by_key(SPREADSHEET_ID).worksheet("Leads")
         hot = "YES" if any(k in str(conv.get("budget","")) for k in ["130000","200000","Above"]) else "NO"
-        sheet.append_row([datetime.now().strftime("%Y-%m-%d %H:%M:%S"),conv.get("name",""),f"+{phone}",conv.get("email",""),conv.get("budget",""),str(conv.get("property_type","")).replace("_"," ").title(),conv.get("language",""),conv.get("timeline",""),ai_response,"New",hot,""])
+        sheet.append_row([
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            conv.get("name",""), f"+{phone}", conv.get("email",""),
+            conv.get("budget",""), str(conv.get("property_type","")).replace("_"," ").title(),
+            conv.get("language",""), conv.get("timeline",""), ai_response, "New", hot, ""
+        ])
+        print("[SHEETS] Logged")
     except Exception as e:
-        print(f"Sheets ERROR: {e}")
+        print(f"[SHEETS] ERROR: {e}")
 
 def log_to_notion(conv, phone, ai_response):
-    if not NOTION_TOKEN or not NOTION_DB_ID:
-        return
+    if not NOTION_TOKEN or not NOTION_DB_ID: return
     hot = any(k in str(conv.get("budget","")) for k in ["130000","200000","Above"])
-    payload = {"parent":{"database_id":NOTION_DB_ID},"properties":{"Lead Name":{"title":[{"text":{"content":conv.get("name","Unknown")}}]},"Phone":{"phone_number":f"+{phone}"},"Budget":{"multi_select":[{"name":str(conv.get("budget","")).replace(",","")}]},"Property Type":{"multi_select":[{"name":str(conv.get("property_type","")).replace(",","").replace("_"," ").title()}]},"Language":{"multi_select":[{"name":"Arabic" if conv.get("language")=="arabic" else "English"}]},"Their Message":{"rich_text":[{"text":{"content":str(conv.get("timeline",""))}}]},"AI Response":{"rich_text":[{"text":{"content":ai_response}}]},"Status":{"select":{"name":"New"}},"Submitted At":{"date":{"start":datetime.now().isoformat()}},"Hot Lead":{"checkbox":hot}}}
+    payload = {
+        "parent": {"database_id": NOTION_DB_ID},
+        "properties": {
+            "Lead Name": {"title": [{"text": {"content": conv.get("name","Unknown")}}]},
+            "Phone": {"phone_number": f"+{phone}"},
+            "Budget": {"multi_select": [{"name": str(conv.get("budget","")).replace(",","")}]},
+            "Property Type": {"multi_select": [{"name": str(conv.get("property_type","")).replace(",","").replace("_"," ").title()}]},
+            "Language": {"multi_select": [{"name": "Arabic" if conv.get("language")=="arabic" else "English"}]},
+            "Their Message": {"rich_text": [{"text": {"content": str(conv.get("timeline",""))}}]},
+            "AI Response": {"rich_text": [{"text": {"content": ai_response}}]},
+            "Status": {"select": {"name": "New"}},
+            "Submitted At": {"date": {"start": datetime.now().isoformat()}},
+            "Hot Lead": {"checkbox": hot}
+        }
+    }
     try:
-        r = requests.post("https://api.notion.com/v1/pages", headers={"Authorization":f"Bearer {NOTION_TOKEN}","Content-Type":"application/json","Notion-Version":"2022-06-28"}, json=payload, timeout=15)
+        r = requests.post(
+            "https://api.notion.com/v1/pages",
+            headers={"Authorization": f"Bearer {NOTION_TOKEN}","Content-Type":"application/json","Notion-Version":"2022-06-28"},
+            json=payload, timeout=15
+        )
         r.raise_for_status()
+        print("[NOTION] Logged")
     except Exception as e:
-        print(f"Notion ERROR: {e}")
+        print(f"[NOTION] ERROR: {e}")
+        if hasattr(e,'response') and e.response is not None:
+            print(f"[NOTION] body: {e.response.text}")
 
-# ── Brochure Generation ───────────────────────────────────────────────────────
-
+# ─── Brochure Generation ──────────────────────────────────────────────────────
 def generate_brochures():
-    if not REPORTLAB_AVAILABLE:
-        return
+    if not REPORTLAB_AVAILABLE: return
     folder = os.path.join(os.path.dirname(__file__), "static", "brochures")
     os.makedirs(folder, exist_ok=True)
-    GOLD = colors.HexColor("#C9A84C"); INK = colors.HexColor("#1A1612"); MUTED = colors.HexColor("#7A6F68"); LIGHT = colors.HexColor("#FDF8EC")
+    GOLD = colors.HexColor("#C9A84C"); INK = colors.HexColor("#1A1612")
+    MUTED = colors.HexColor("#7A6F68"); LIGHT = colors.HexColor("#FDF8EC")
     for prop in PROPERTIES:
         fp = os.path.join(folder, prop["filename"])
         if os.path.exists(fp): continue
@@ -456,40 +520,72 @@ def generate_brochures():
             lb = ParagraphStyle("lb", fontName="Helvetica-Bold", fontSize=9, textColor=GOLD, leading=14)
             bd = ParagraphStyle("bd", fontName="Helvetica", fontSize=10, textColor=MUTED, leading=16)
             ct = ParagraphStyle("ct", fontName="Helvetica", fontSize=10, textColor=MUTED, leading=16, alignment=TA_CENTER)
-            hdr = Table([[Paragraph("AL NOOR PROPERTIES", ParagraphStyle("hl",fontName="Helvetica-Bold",fontSize=10,textColor=GOLD,leading=14,alignment=TA_CENTER))],[Paragraph(prop["name"], ParagraphStyle("t",fontName="Helvetica-Bold",fontSize=22,textColor=colors.white,leading=28,alignment=TA_CENTER))],[Paragraph("Muscat, Sultanate of Oman", ParagraphStyle("s",fontName="Helvetica",fontSize=11,textColor=colors.HexColor("#D4A017"),leading=16,alignment=TA_CENTER))]], colWidths=[170*mm])
-            hdr.setStyle(TableStyle([("BACKGROUND",(0,0),(-1,-1),INK),("TOPPADDING",(0,0),(-1,0),16),("BOTTOMPADDING",(0,0),(-1,0),4),("TOPPADDING",(0,1),(-1,1),4),("BOTTOMPADDING",(0,1),(-1,1),4),("TOPPADDING",(0,2),(-1,2),4),("BOTTOMPADDING",(0,2),(-1,2),16),("LINEBELOW",(0,0),(-1,-1),3,GOLD)]))
-            s += [hdr, Spacer(1,16), Paragraph(f"OMR {prop['price']:,}", ParagraphStyle("pr",fontName="Helvetica-Bold",fontSize=28,textColor=GOLD,leading=34,alignment=TA_CENTER)), Spacer(1,8), HRFlowable(width="100%",thickness=0.5,color=GOLD), Spacer(1,16)]
-            det = Table([[Paragraph(r[0],lb),Paragraph(r[1],bd),Paragraph(r[2],lb),Paragraph(r[3],bd)] for r in [["Type",prop["type"].replace("_"," ").title(),"Size",prop["size"]],["Floor",prop["floor"],"Status",prop["status"]],["Handover",prop["handover"],"Project",prop["name"].split("—")[0].strip()]]], colWidths=[30*mm,55*mm,35*mm,50*mm])
-            det.setStyle(TableStyle([("BACKGROUND",(0,0),(-1,-1),LIGHT),("GRID",(0,0),(-1,-1),0.3,colors.HexColor("#E8D5A3")),("TOPPADDING",(0,0),(-1,-1),8),("BOTTOMPADDING",(0,0),(-1,-1),8),("LEFTPADDING",(0,0),(-1,-1),10),("RIGHTPADDING",(0,0),(-1,-1),10),("VALIGN",(0,0),(-1,-1),"MIDDLE")]))
+            hdr = Table([
+                [Paragraph("AL NOOR PROPERTIES", ParagraphStyle("hl",fontName="Helvetica-Bold",fontSize=10,textColor=GOLD,leading=14,alignment=TA_CENTER))],
+                [Paragraph(prop["name"], ParagraphStyle("t",fontName="Helvetica-Bold",fontSize=22,textColor=colors.white,leading=28,alignment=TA_CENTER))],
+                [Paragraph("Muscat, Sultanate of Oman", ParagraphStyle("s",fontName="Helvetica",fontSize=11,textColor=colors.HexColor("#D4A017"),leading=16,alignment=TA_CENTER))],
+            ], colWidths=[170*mm])
+            hdr.setStyle(TableStyle([
+                ("BACKGROUND",(0,0),(-1,-1),INK),
+                ("TOPPADDING",(0,0),(-1,0),16),("BOTTOMPADDING",(0,0),(-1,0),4),
+                ("TOPPADDING",(0,1),(-1,1),4),("BOTTOMPADDING",(0,1),(-1,1),4),
+                ("TOPPADDING",(0,2),(-1,2),4),("BOTTOMPADDING",(0,2),(-1,2),16),
+                ("LINEBELOW",(0,0),(-1,-1),3,GOLD),
+            ]))
+            s += [hdr, Spacer(1,16),
+                  Paragraph(f"OMR {prop['price']:,}", ParagraphStyle("pr",fontName="Helvetica-Bold",fontSize=28,textColor=GOLD,leading=34,alignment=TA_CENTER)),
+                  Spacer(1,8), HRFlowable(width="100%",thickness=0.5,color=GOLD), Spacer(1,16)]
+            det = Table([[Paragraph(r[0],lb),Paragraph(r[1],bd),Paragraph(r[2],lb),Paragraph(r[3],bd)] for r in [
+                ["Type",prop["type"].replace("_"," ").title(),"Size",prop["size"]],
+                ["Floor",prop["floor"],"Status",prop["status"]],
+                ["Handover",prop["handover"],"Project",prop["name"].split("—")[0].strip()],
+            ]], colWidths=[30*mm,55*mm,35*mm,50*mm])
+            det.setStyle(TableStyle([
+                ("BACKGROUND",(0,0),(-1,-1),LIGHT),("GRID",(0,0),(-1,-1),0.3,colors.HexColor("#E8D5A3")),
+                ("TOPPADDING",(0,0),(-1,-1),8),("BOTTOMPADDING",(0,0),(-1,-1),8),
+                ("LEFTPADDING",(0,0),(-1,-1),10),("RIGHTPADDING",(0,0),(-1,-1),10),
+                ("VALIGN",(0,0),(-1,-1),"MIDDLE"),
+            ]))
             s += [det, Spacer(1,20), Paragraph("KEY FEATURES",lb), Spacer(1,8)]
             feat = Table([[Paragraph("✦",ParagraphStyle("dot",fontName="Helvetica",fontSize=10,textColor=GOLD,leading=16)),Paragraph(f,bd)] for f in prop["features"]], colWidths=[8*mm,162*mm])
             feat.setStyle(TableStyle([("TOPPADDING",(0,0),(-1,-1),4),("BOTTOMPADDING",(0,0),(-1,-1),4),("LEFTPADDING",(0,0),(-1,-1),0),("VALIGN",(0,0),(-1,-1),"MIDDLE")]))
-            s += [feat, Spacer(1,20), HRFlowable(width="100%",thickness=0.5,color=colors.HexColor("#E8D5A3")), Spacer(1,16), Paragraph("CONTACT YOUR SPECIALIST",lb), Spacer(1,8), Paragraph("Ahmed Al-Balushi  |  Senior Property Specialist",ct), Paragraph("Al Noor Properties, Muscat, Oman",ct), Paragraph("+968 9123 4567  |  info@alnoorproperties.om",ct)]
+            s += [feat, Spacer(1,20), HRFlowable(width="100%",thickness=0.5,color=colors.HexColor("#E8D5A3")), Spacer(1,16),
+                  Paragraph("CONTACT YOUR SPECIALIST",lb), Spacer(1,8),
+                  Paragraph("Ahmed Al-Balushi  |  Senior Property Specialist",ct),
+                  Paragraph("Al Noor Properties, Muscat, Oman",ct),
+                  Paragraph("+968 9123 4567  |  info@alnoorproperties.om",ct)]
             doc.build(s)
-            print(f"Brochure: {prop['filename']}")
+            print(f"[BROCHURE] {prop['filename']}")
         except Exception as e:
-            print(f"Brochure ERROR {prop['filename']}: {e}")
+            print(f"[BROCHURE] ERROR {prop['filename']}: {e}")
 
-# ── Core Message Processor ────────────────────────────────────────────────────
-
+# ─── Core Message Processor ───────────────────────────────────────────────────
 def process_message(raw_phone, incoming_text):
+    """
+    This runs in a background thread (called from webhook_receive).
+    All state mutations are persisted immediately via _save().
+    """
     phone = normalize_phone(raw_phone)
     if not phone:
         print(f"[PROCESS] Bad phone: '{raw_phone}'"); return
 
     conv = get_conversation(phone)
-    conv["phone"] = phone
+    print(f"[PROCESS] +{phone} state={conv['state']} text='{incoming_text[:60]}'")
 
-    print(f"[PROCESS] +{phone} | state={conv['state']} | '{incoming_text[:60]}'")
-    print(f"[PROCESS] GROQ={'SET' if GROQ_API_KEY else 'MISSING!'} WA={'SET' if WA_PHONE_NUMBER_ID else 'MISSING!'}")
-
-    if conv["state"] in ["new", "asked_name"] and detect_language(incoming_text) == "arabic":
+    # Detect Arabic on early messages
+    if conv["state"] in ["new","asked_name"] and detect_language(incoming_text) == "arabic":
         conv["language"] = "arabic"
 
     lang = conv["language"]
     msgs = MESSAGES[lang]
 
-    add_to_history(phone, "user", incoming_text)
+    # ── Always log the incoming lead message first ────────────────────────────
+    conv["history"].append({
+        "role": "user",
+        "text": incoming_text,
+        "time": datetime.now().strftime("%H:%M")
+    })
+    _save()
 
     # ── STATE MACHINE ─────────────────────────────────────────────────────────
 
@@ -497,8 +593,8 @@ def process_message(raw_phone, incoming_text):
         conv["state"] = "asked_name"
         reply = msgs["welcome"]
         send_whatsapp_text(phone, reply)
-        add_to_history(phone, "bot", reply)
-        return
+        conv["history"].append({"role":"bot","text":reply,"time":datetime.now().strftime("%H:%M")})
+        _save(); return
 
     if conv["state"] == "asked_name":
         words = incoming_text.strip().split()
@@ -506,8 +602,8 @@ def process_message(raw_phone, incoming_text):
         conv["state"] = "asked_type"
         reply = msgs["ask_type"].format(name=conv["name"])
         send_whatsapp_text(phone, reply)
-        add_to_history(phone, "bot", reply)
-        return
+        conv["history"].append({"role":"bot","text":reply,"time":datetime.now().strftime("%H:%M")})
+        _save(); return
 
     if conv["state"] == "asked_type":
         prop_type = parse_property_type(incoming_text)
@@ -517,8 +613,8 @@ def process_message(raw_phone, incoming_text):
         conv["state"] = "asked_budget"
         reply = msgs["ask_budget"]
         send_whatsapp_text(phone, reply)
-        add_to_history(phone, "bot", reply)
-        return
+        conv["history"].append({"role":"bot","text":reply,"time":datetime.now().strftime("%H:%M")})
+        _save(); return
 
     if conv["state"] == "asked_budget":
         budget = parse_budget(incoming_text)
@@ -528,98 +624,58 @@ def process_message(raw_phone, incoming_text):
         conv["state"] = "asked_timeline"
         reply = msgs["ask_timeline"]
         send_whatsapp_text(phone, reply)
-        add_to_history(phone, "bot", reply)
-        return
+        conv["history"].append({"role":"bot","text":reply,"time":datetime.now().strftime("%H:%M")})
+        _save(); return
 
     if conv["state"] == "asked_timeline":
         conv["timeline"] = parse_timeline(incoming_text)
         rec = generate_recommendation(conv["name"], conv["budget"], conv["property_type"], conv["timeline"], lang)
         send_whatsapp_text(phone, rec)
-        add_to_history(phone, "bot", rec)
+        conv["history"].append({"role":"bot","text":rec,"time":datetime.now().strftime("%H:%M")})
         matched = select_property(conv["budget"], conv["property_type"])
-        send_whatsapp_document(phone, f"{RENDER_URL}/static/brochures/{matched['filename']}", matched["name"] + ".pdf")
+        send_whatsapp_document(phone, f"{RENDER_URL}/static/brochures/{matched['filename']}", matched["name"]+".pdf")
         log_to_sheets(conv, phone, rec)
         log_to_notion(conv, phone, rec)
         send_agent_alert(conv, phone, alert_type="new")
         conv["state"] = "ai_nurturing"
-        return
+        _save(); return
 
     if conv["state"] == "ai_nurturing":
         ai_reply = generate_sales_reply(conv, incoming_text)
         if not ai_reply:
             fallback = msgs["ai_error"]
             send_whatsapp_text(phone, fallback)
-            add_to_history(phone, "bot", fallback)
-            return
-
-        if "[OFFER_SLOTS]" in ai_reply:
-            clean = ai_reply.replace("[OFFER_SLOTS]", "").strip()
+            conv["history"].append({"role":"bot","text":fallback,"time":datetime.now().strftime("%H:%M")})
+            _save(); return
+        booking = "[BOOKING_CONFIRMED]" in ai_reply
+        clean   = ai_reply.replace("[BOOKING_CONFIRMED]", "").strip()
+        if booking:
+            full = clean + msgs["booking_signoff"]
+            send_whatsapp_text(phone, full)
+            conv["history"].append({"role":"bot","text":full,"time":datetime.now().strftime("%H:%M")})
+            conv["state"] = "handed_over"
+            conv["booking_confirmed"] = True
+            send_agent_alert(conv, phone, alert_type="booking")
+        else:
             send_whatsapp_text(phone, clean)
-            add_to_history(phone, "bot", clean)
-            slots = generate_viewing_slots()
-            conv["viewing_slots"] = slots
-            conv["state"] = "awaiting_slot"
-            slot_msg = format_slots_message(slots, lang)
-            send_whatsapp_text(phone, slot_msg)
-            add_to_history(phone, "bot", slot_msg)
-        else:
-            send_whatsapp_text(phone, ai_reply)
-            add_to_history(phone, "bot", ai_reply)
-        return
-
-    if conv["state"] == "awaiting_slot":
-        slots = conv.get("viewing_slots", [])
-        choice = parse_slot_choice(incoming_text, len(slots))
-
-        if choice is None:
-            clarify = "ممكن تردّ برقم 1، 2، أو 3 لتأكيد موعدك. 😊" if lang == "arabic" else "Please reply with 1, 2, or 3 to confirm your viewing slot. 😊"
-            send_whatsapp_text(phone, clarify)
-            add_to_history(phone, "bot", clarify)
-            return
-
-        chosen_iso = slots[choice]
-        conv["chosen_slot"] = chosen_iso
-        conv["booking_confirmed"] = True
-        conv["state"] = "handed_over"
-
-        dt = datetime.fromisoformat(chosen_iso)
-        formatted = dt.strftime("%A, %d %B at %I:%M %p")
-
-        if lang == "arabic":
-            confirm_msg = (
-                f"تم الحجز! 🎉✅\n\n"
-                f"موعد زيارتك: *{formatted}*\n\n"
-                f"متخصصنا أحمد البلوشي راح يتواصل معك قريباً لتأكيد التفاصيل.\n\n"
-                f"أحمد البلوشي | عقارات النور | +968 9123 4567"
-            )
-        else:
-            confirm_msg = (
-                f"Booking confirmed! 🎉✅\n\n"
-                f"Your viewing is scheduled for *{formatted}*\n\n"
-                f"Our specialist Ahmed Al-Balushi will contact you shortly to confirm the details.\n\n"
-                f"Ahmed Al-Balushi | Al Noor Properties | +968 9123 4567"
-            )
-
-        send_whatsapp_text(phone, confirm_msg)
-        add_to_history(phone, "bot", confirm_msg)
-
-        cal_url = build_google_calendar_link(conv, chosen_iso)
-        conv["calendar_url"] = cal_url
-        send_agent_alert(conv, phone, alert_type="booking", calendar_url=cal_url)
-        return
+            conv["history"].append({"role":"bot","text":clean,"time":datetime.now().strftime("%H:%M")})
+        _save(); return
 
     if conv["state"] == "handed_over":
+        # Lead replied after handover — alert agent and store in history (already stored above)
         if AGENT_WHATSAPP:
             send_whatsapp_text(AGENT_WHATSAPP,
-                f"💬 REPLY — {conv.get('name', phone)}\nPhone: +{phone}\nMsg: {incoming_text}\n\n"
+                f"💬 LEAD REPLY — {conv.get('name', phone)}\n"
+                f"Phone: +{phone}\nMsg: {incoming_text}\n\n"
                 f"📋 {RENDER_URL}/agent?key={AGENT_DASHBOARD_KEY}")
-        return
+        _save(); return
 
-    print(f"Unknown state '{conv['state']}' for {phone} — resetting")
+    # Safety: unknown state → reset
+    print(f"[PROCESS] Unknown state '{conv['state']}' for {phone} — resetting")
     conv["state"] = "new"
-    process_message(raw_phone, incoming_text)
+    _save()
 
-# ── Routes ────────────────────────────────────────────────────────────────────
+# ─── Routes ──────────────────────────────────────────────────────────────────
 
 @app.route("/", methods=["GET"])
 def form():
@@ -639,7 +695,6 @@ def submit():
 
     phone    = normalize_phone(phone_raw)
     lang_key = "arabic" if "arabic" in language.lower() else "english"
-
     pt_lower = prop_type.lower()
     prop_type_key = "apartment_small"
     if "3 or more" in pt_lower or "large" in pt_lower: prop_type_key = "apartment_large"
@@ -647,75 +702,82 @@ def submit():
     elif "studio" in pt_lower: prop_type_key = "studio"
 
     conversations[phone] = {
-        "state": "ai_nurturing", "language": lang_key,
+        "state": "ai_nurturing",
+        "language": lang_key,
         "name": name.strip().split()[0].capitalize(),
-        "property_type": prop_type_key, "budget": budget,
-        "timeline": message or "Web form enquiry", "history": [],
-        "booking_confirmed": False, "source": "web_form",
+        "property_type": prop_type_key,
+        "budget": budget,
+        "timeline": message or "Web form enquiry",
+        "history": [],
+        "booking_confirmed": False,
+        "booking_link_sent": False,
+        "source": "web_form",
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "email": email, "phone": phone,
-        "viewing_slots": [], "chosen_slot": None, "calendar_url": "",
+        "email": email,
     }
     conv = conversations[phone]
-
     rec = generate_recommendation(name, budget, prop_type, message or "Web form enquiry", lang_key)
     send_whatsapp_text(phone_raw, rec)
-    add_to_history(phone, "bot", rec)
+    conv["history"].append({"role":"bot","text":rec,"time":datetime.now().strftime("%H:%M")})
     matched = select_property(budget.replace(",",""), prop_type_key)
-    send_whatsapp_document(phone_raw, f"{RENDER_URL}/static/brochures/{matched['filename']}", matched["name"] + ".pdf")
-
+    send_whatsapp_document(phone_raw, f"{RENDER_URL}/static/brochures/{matched['filename']}", matched["name"]+".pdf")
     if AGENT_WHATSAPP:
         send_whatsapp_text(AGENT_WHATSAPP,
             f"🔔 NEW WEB LEAD\nName: {name}\nPhone: {phone_raw}\nEmail: {email}\n"
             f"Budget: {budget}\nProperty: {prop_type}\nLanguage: {language}\nMsg: {message or 'None'}\n\n"
             f"✅ Rec + brochure sent.\n📋 {RENDER_URL}/agent?key={AGENT_DASHBOARD_KEY}")
-
     log_to_sheets(conv, phone, rec)
     log_to_notion(conv, phone, rec)
+    _save()
     return redirect(url_for("thank_you", name=name.split()[0]))
 
 @app.route("/webhook", methods=["GET"])
 def webhook_verify():
     if request.args.get("hub.mode") == "subscribe" and request.args.get("hub.verify_token") == VERIFY_TOKEN:
-        print("Webhook verified ✓")
+        print("[WEBHOOK] Verified ✓")
         return request.args.get("hub.challenge"), 200
     return "Forbidden", 403
 
 @app.route("/webhook", methods=["POST"])
 def webhook_receive():
+    """
+    CRITICAL: Return 200 to Meta IMMEDIATELY.
+    Meta has a 20-second timeout. Any Groq call inside process_message takes
+    5-30 seconds. We spawn a background thread and return 200 at once.
+    """
     raw_body = request.get_data(as_text=True)
-    print(f"WEBHOOK RAW: {raw_body[:500]}")
-    try:
-        data = json.loads(raw_body) if raw_body else None
-    except Exception as e:
-        print(f"WEBHOOK JSON ERROR: {e}")
-        return "OK", 200
-    if not data:
-        return "OK", 200
-    try:
-        for entry in data.get("entry", []):
-            for change in entry.get("changes", []):
-                value = change.get("value", {})
-                if "statuses" in value and "messages" not in value:
-                    continue
-                for msg in value.get("messages", []):
-                    if msg.get("type") != "text":
-                        continue
-                    raw_phone = msg.get("from", "").strip()
-                    text = (msg.get("text") or {}).get("body", "").strip()
-                    if raw_phone and text:
-                        print(f"WEBHOOK OK: +{raw_phone} '{text[:80]}'")
-                        process_message(raw_phone, text)
-    except Exception as e:
-        print(f"WEBHOOK ERROR: {e}")
-        import traceback; traceback.print_exc()
-    return "OK", 200
+
+    def handle():
+        try:
+            data = json.loads(raw_body) if raw_body else None
+            if not data: return
+            for entry in data.get("entry", []):
+                for change in entry.get("changes", []):
+                    value = change.get("value", {})
+                    if "statuses" in value and "messages" not in value:
+                        continue  # skip delivery receipts
+                    for msg in value.get("messages", []):
+                        if msg.get("type") != "text":
+                            continue
+                        raw_phone = msg.get("from", "").strip()
+                        text = (msg.get("text") or {}).get("body", "").strip()
+                        if raw_phone and text:
+                            print(f"[WEBHOOK] +{raw_phone}: {text[:60]}")
+                            process_message(raw_phone, text)
+        except Exception as e:
+            import traceback
+            print(f"[WEBHOOK THREAD] ERROR: {e}")
+            traceback.print_exc()
+
+    threading.Thread(target=handle, daemon=True).start()
+    return "OK", 200  # ← returned immediately, before Groq is ever called
 
 @app.route("/agent")
 def agent_dashboard():
     if request.args.get("key","") != AGENT_DASHBOARD_KEY:
         return "Access denied", 403
-    return render_template("agent.html", key=AGENT_DASHBOARD_KEY)
+    return render_template("agent.html", conversations=conversations, key=AGENT_DASHBOARD_KEY,
+                           calendar_url=CALENDAR_BOOKING_URL)
 
 @app.route("/agent/send", methods=["POST"])
 def agent_send():
@@ -725,124 +787,48 @@ def agent_send():
     message   = request.form.get("message","").strip()
     if not phone_raw or not message:
         return jsonify({"success":False}), 400
-    phone   = normalize_phone(phone_raw)
-    success = send_whatsapp_text(phone, message)
-    add_to_history(phone, "agent", message)
-    if phone in conversations:
-        conversations[phone]["state"] = "handed_over"
-    history = conversations.get(phone, {}).get("history", [])
-    return jsonify({"success": success, "history": history})
-
-@app.route("/agent/offer-slots", methods=["POST"])
-def agent_offer_slots():
-    """Agent manually sends viewing slot picker from dashboard."""
-    if request.form.get("key","") != AGENT_DASHBOARD_KEY:
-        return jsonify({"success":False}), 403
-    phone_raw = request.form.get("phone","").strip()
-    if not phone_raw:
-        return jsonify({"success":False}), 400
+    success = send_whatsapp_text(phone_raw, message)
     phone = normalize_phone(phone_raw)
     conv  = get_conversation(phone)
-    conv["phone"] = phone
+    conv["history"].append({"role":"agent","text":message,"time":datetime.now().strftime("%H:%M")})
+    conv["state"] = "handed_over"
+    _save()
+    return jsonify({"success": success})
+
+@app.route("/agent/book", methods=["POST"])
+def agent_book():
+    """
+    Agent clicks 'Send Booking Link' in dashboard.
+    Bot sends the Google Calendar appointment URL to the lead via WhatsApp.
+    The lead clicks it, picks a slot, and Google Calendar handles everything.
+    """
+    if request.form.get("key","") != AGENT_DASHBOARD_KEY:
+        return jsonify({"success":False,"error":"forbidden"}), 403
+    phone_raw = request.form.get("phone","").strip()
+    if not phone_raw:
+        return jsonify({"success":False,"error":"phone required"}), 400
+
+    if not CALENDAR_BOOKING_URL:
+        return jsonify({
+            "success": False,
+            "error": "CALENDAR_BOOKING_URL not configured. Set it in Render environment variables."
+        }), 400
+
+    phone = normalize_phone(phone_raw)
+    conv  = get_conversation(phone)
     lang  = conv.get("language","english")
-    slots = generate_viewing_slots()
-    conv["viewing_slots"] = slots
-    conv["state"] = "awaiting_slot"
-    slot_msg = format_slots_message(slots, lang)
-    success  = send_whatsapp_text(phone, slot_msg)
-    add_to_history(phone, "bot", slot_msg)
-    return jsonify({"success": success, "history": conv.get("history",[])})
+    msgs  = MESSAGES[lang]
 
-@app.route("/api/conversations")
-def api_conversations():
-    if request.args.get("key","") != AGENT_DASHBOARD_KEY:
-        return jsonify({"error":"forbidden"}), 403
-    return jsonify(conversations)
-
-@app.route("/api/history/<phone>")
-def api_history(phone):
-    if request.args.get("key","") != AGENT_DASHBOARD_KEY:
-        return jsonify({"error":"forbidden"}), 403
-    key  = normalize_phone(phone)
-    conv = conversations.get(key)
-    if not conv:
-        return jsonify({"history":[], "state":"new", "booking_confirmed":False,
-                        "name":None, "budget":None, "property_type":None,
-                        "timeline":None, "language":"english", "calendar_url":"", "chosen_slot":""})
-    return jsonify({
-        "history":           conv.get("history",[]),
-        "state":             conv.get("state"),
-        "booking_confirmed": conv.get("booking_confirmed",False),
-        "name":              conv.get("name"),
-        "budget":            conv.get("budget"),
-        "property_type":     conv.get("property_type"),
-        "timeline":          conv.get("timeline"),
-        "language":          conv.get("language","english"),
-        "calendar_url":      conv.get("calendar_url",""),
-        "chosen_slot":       conv.get("chosen_slot",""),
-    })
-
-@app.route("/chat", methods=["POST"])
-def chat_demo():
-    data = request.get_json(silent=True)
-    if not data:
-        return jsonify({"error":"invalid request"}), 400
-    messages = data.get("messages", [])
-    if not messages:
-        return jsonify({"error":"no messages"}), 400
-    system_prompt = """You are PropertyIQ, a premium real estate assistant for Al Noor Properties in Muscat, Oman.
-AVAILABLE PROPERTIES:
-1 | Muscat Bay 2BR | 85,000 OMR | Sea view, pool+gym | Q2 2025
-2 | Muscat Bay 3BR | 130,000 OMR | Panoramic view, smart home | Q2 2025
-3 | Al Mouj 2BR | 95,000 OMR | Golf view, beach club | LAST 2 UNITS
-4 | Al Mouj Villa 4BR | 285,000 OMR | Private pool, beach | 1 LEFT
-5 | The Wave Studio | 55,000 OMR | Marina view | Q1 2025
-MISSION: Qualify the lead and get them to book a viewing.
-RULES: Max 3-4 sentences. WhatsApp style. Detect Arabic → reply in Khaleeji Arabic. Use their name. Create urgency. When they agree to book: confirm Ahmed Al-Balushi (+968 9123 4567) will contact them."""
-    url = "https://api.groq.com/openai/v1/chat/completions"
-    headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
-    payload = {"model":"llama-3.3-70b-versatile","messages":[{"role":"system","content":system_prompt}]+messages,"max_tokens":300,"temperature":0.72}
-    try:
-        r = requests.post(url, headers=headers, json=payload, timeout=30)
-        r.raise_for_status()
-        reply = r.json()["choices"][0]["message"]["content"].strip()
-        return jsonify({"reply": reply})
-    except Exception as e:
-        print(f"Chat demo ERROR: {e}")
-        return jsonify({"error":"AI unavailable"}), 500
-
-@app.route("/debug")
-def debug():
-    if request.args.get("key","") != AGENT_DASHBOARD_KEY:
-        return "Access denied", 403
-    lines = [
-        f"GROQ_API_KEY: {'✅ SET (' + GROQ_API_KEY[:8] + '...)' if GROQ_API_KEY else '❌ MISSING'}",
-        f"WA_PHONE_NUMBER_ID: {'✅ ' + WA_PHONE_NUMBER_ID if WA_PHONE_NUMBER_ID else '❌ MISSING'}",
-        f"WA_ACCESS_TOKEN: {'✅ SET' if WA_ACCESS_TOKEN else '❌ MISSING'}",
-        f"AGENT_WHATSAPP: {'✅ ' + AGENT_WHATSAPP if AGENT_WHATSAPP else '⚠️ not set'}",
-        f"RENDER_URL: {RENDER_URL}",
-        "",f"Active conversations: {len(conversations)}","--- Conversations ---",
-    ]
-    for phone, conv in conversations.items():
-        lines.append(f"+{phone} | {conv.get('name','?')} | state={conv.get('state')} | msgs={len(conv.get('history',[]))} | booked={conv.get('booking_confirmed')}")
-    return "<pre style='font-family:monospace;padding:2rem;line-height:1.8'>" + "\n".join(lines) + "</pre>"
-
-@app.route("/api/test-webhook", methods=["POST"])
-def test_webhook():
-    if request.args.get("key","") != AGENT_DASHBOARD_KEY:
-        return jsonify({"error":"forbidden"}), 403
-    data  = request.get_json(silent=True) or {}
-    phone = data.get("phone","").strip()
-    text  = data.get("text","").strip()
-    if not phone or not text:
-        return jsonify({"error":"phone and text required"}), 400
-    print(f"[TEST WEBHOOK] from={phone} text='{text}'")
-    process_message(phone, text)
-    return jsonify({"ok":True, "state": get_conversation(normalize_phone(phone)).get("state")})
+    booking_msg = msgs["booking_link"].format(url=CALENDAR_BOOKING_URL)
+    success = send_whatsapp_text(phone_raw, booking_msg)
+    conv["history"].append({"role":"bot","text":booking_msg,"time":datetime.now().strftime("%H:%M")})
+    conv["booking_link_sent"] = True
+    _save()
+    return jsonify({"success": success, "message": "Booking link sent to lead"})
 
 @app.route("/static/brochures/<filename>")
 def serve_brochure(filename):
-    return send_from_directory(os.path.join(os.path.dirname(__file__), "static", "brochures"), filename)
+    return send_from_directory(os.path.join(os.path.dirname(__file__),"static","brochures"), filename)
 
 @app.route("/thanks")
 def thank_you():
@@ -850,10 +836,67 @@ def thank_you():
 
 @app.route("/health")
 def health():
-    return jsonify({"status":"live","conversations":len(conversations),
-        "booked":sum(1 for c in conversations.values() if c.get("booking_confirmed")),
-        "nurturing":sum(1 for c in conversations.values() if c.get("state")=="ai_nurturing")}), 200
+    return jsonify({
+        "status": "live",
+        "conversations": len(conversations),
+        "booked": sum(1 for c in conversations.values() if c.get("booking_confirmed")),
+        "nurturing": sum(1 for c in conversations.values() if c.get("state")=="ai_nurturing"),
+        "calendar_configured": bool(CALENDAR_BOOKING_URL),
+    }), 200
 
+@app.route("/api/conversations")
+def api_conversations():
+    if request.args.get("key","") != AGENT_DASHBOARD_KEY:
+        return jsonify({"error":"forbidden"}), 403
+    phone = request.args.get("phone")
+    if phone:
+        key = normalize_phone(phone)
+        conv = conversations.get(key)
+        if not conv: return jsonify({"error":"not found"}), 404
+        return jsonify({
+            "history":          conv.get("history",[]),
+            "state":            conv.get("state"),
+            "booking_confirmed":conv.get("booking_confirmed",False),
+            "booking_link_sent":conv.get("booking_link_sent",False),
+        })
+    return jsonify(conversations)
+
+@app.route("/debug")
+def debug():
+    if request.args.get("key","") != AGENT_DASHBOARD_KEY:
+        return "Access denied", 403
+    lines = [
+        f"GROQ_API_KEY: {'✅ SET ('+GROQ_API_KEY[:8]+'...)' if GROQ_API_KEY else '❌ MISSING'}",
+        f"WA_PHONE_NUMBER_ID: {'✅ '+WA_PHONE_NUMBER_ID if WA_PHONE_NUMBER_ID else '❌ MISSING'}",
+        f"WA_ACCESS_TOKEN: {'✅ SET ('+WA_ACCESS_TOKEN[:12]+'...)' if WA_ACCESS_TOKEN else '❌ MISSING'}",
+        f"AGENT_WHATSAPP: {'✅ '+AGENT_WHATSAPP if AGENT_WHATSAPP else '⚠️ not set'}",
+        f"CALENDAR_BOOKING_URL: {'✅ '+CALENDAR_BOOKING_URL[:40]+'...' if CALENDAR_BOOKING_URL else '⚠️ not set — booking button will error'}",
+        f"VERIFY_TOKEN: {VERIFY_TOKEN}",
+        f"RENDER_URL: {RENDER_URL}",
+        f"Conv file: {CONV_FILE} ({'exists' if os.path.exists(CONV_FILE) else 'not found'})",
+        f"Active conversations: {len(conversations)}",
+        "", "--- Conversations ---",
+    ]
+    for ph, c in conversations.items():
+        lines.append(f"+{ph} | {c.get('name','?')} | state={c.get('state')} | msgs={len(c.get('history',[]))} | booked={c.get('booking_confirmed')}")
+    return "<pre style='font-family:monospace;padding:2rem;background:#111;color:#0f0;line-height:1.8'>" + "\n".join(lines) + "</pre>"
+
+@app.route("/api/test-webhook", methods=["POST"])
+def test_webhook():
+    """Dev helper — simulate an incoming WhatsApp message without Meta."""
+    if request.args.get("key","") != AGENT_DASHBOARD_KEY:
+        return jsonify({"error":"forbidden"}), 403
+    data  = request.get_json(silent=True) or {}
+    phone = data.get("phone","").strip()
+    text  = data.get("text","").strip()
+    if not phone or not text:
+        return jsonify({"error":"phone and text required"}), 400
+    threading.Thread(target=process_message, args=(phone, text), daemon=True).start()
+    return jsonify({"ok":True, "queued":True})
+
+# ─── Startup ──────────────────────────────────────────────────────────────────
+_load()
 generate_brochures()
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT",5000)), debug=False)
